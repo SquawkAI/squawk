@@ -2,35 +2,12 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 
+import Navbar from "@/components/Navbar";
+
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col font-sans bg-white text-black">
-      {/* Navbar */}
-      <header className="w-full border-b py-6 px-6 md:px-12">
-        <div className="mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/squawk-logo-large.png"
-              alt="SquawkAI Logo"
-              width={200}
-              height={200}
-              priority
-            />
-          </div>
-
-          <nav className="hidden md:flex items-center gap-8 text-base font-medium">
-            <Link href="/product" className="hover:text-blue-600">Product</Link>
-            <Link href="/how-it-works" className="hover:text-blue-600">How It Works</Link>
-            <Link href="/pricing" className="hover:text-blue-600">Pricing</Link>
-            <Link href="/security" className="hover:text-blue-600">Security</Link>
-            <Link href="/blog" className="hover:text-blue-600">Blog</Link>
-
-            <Button asChild>
-              <Link href="/get-started">Get Started</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section */}
       <main className="flex-grow w-full px-6 py-16 md:px-12 flex items-center">
