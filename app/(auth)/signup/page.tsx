@@ -13,16 +13,20 @@ import {
 import { Input } from "@/components/ui/input";
 
 /* ─────── Schema ─────── */
-const schema = z.object({
+const signUpFormSchema = z.object({
     email: z.email("Enter a valid email").trim(),
     password: z.string().min(8, "Min 8 characters").trim(),
 });
 
 export default function SignIn() {
-    const form = useForm<z.infer<typeof schema>>({
-        resolver: zodResolver(schema),
+    const form = useForm<z.infer<typeof signUpFormSchema>>({
+        resolver: zodResolver(signUpFormSchema),
         defaultValues: { email: "", password: "" },
     });
+
+    function onSubmit(values: z.infer<typeof signUpFormSchema>) {
+        console.log(values)
+    }
 
     return (
         <div className="flex-1 space-y-8 text-center lg:text-left order-2 lg:order-1">
@@ -39,7 +43,7 @@ export default function SignIn() {
             {/* ——— Form ——— */}
             <Form {...form}>
                 <form
-                    onSubmit={form.handleSubmit((v) => console.log(v))}
+                    onSubmit={form.handleSubmit((v) => onSubmit(v))}
                     className="space-y-6 px-2"
                 >
                     <FormField
