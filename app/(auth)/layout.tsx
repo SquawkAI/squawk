@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
 import Image from "next/image";
 
-import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
     return (
@@ -43,19 +43,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                     </div>
 
                     {/* Form block */}
-                    <div className="flex-1 space-y-8 text-center lg:text-left order-2 lg:order-1">
-                        <h1
-                            className="
-                font-semibold leading-tight tracking-tight
-                text-[clamp(2.25rem,5.5vw,3.75rem)]
-                lg:text-7xl xl:text-[3.75rem]
-              "
-                        >
-                            Sign into Squawk
-                        </h1>
-
-                        { children }
-                    </div>
+                    {children}
                 </div>
             </main>
 
