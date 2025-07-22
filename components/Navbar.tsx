@@ -12,13 +12,19 @@ const Navbar: React.FC = () => {
                     <Image
                         src="/squawk-logo-large.png"
                         alt="SquawkAI Logo"
+                        priority
                         width={200}
                         height={200}
-                        priority
+                        sizes="
+                            (min-width: 1280px) 200px,
+                            (min-width: 768px) 160px,
+                            120px
+                        "
+                        className="w-[120px] md:w-[160px] xl:w-[200px] h-auto"
                     />
                 </div>
 
-                <nav className="hidden md:flex items-center gap-8 text-base font-medium">
+                <nav className="hidden lg:flex items-center gap-8 text-base font-medium">
                     <Link href="/product" className="hover:text-blue-600">Product</Link>
                     <Link href="/how-it-works" className="hover:text-blue-600">How It Works</Link>
                     <Link href="/pricing" className="hover:text-blue-600">Pricing</Link>
