@@ -74,7 +74,7 @@ export default function Home() {
 
             <div className="flex justify-center lg:justify-start px-2">
               <Button size="lg" asChild>
-                <Link href="/get-started">Get Started</Link>
+                <Link href="/signin">Get Started</Link>
               </Button>
             </div>
           </div>

@@ -82,7 +82,7 @@ export default function SignIn() {
                     <div className="flex flex-col sm:flex-row justify-between text-sm">
                         <span className="mt-2 sm:mt-0">
                             Already have an account?
-                            <Link href="/signup" className="text-blue-600 hover:underline px-1">
+                            <Link href="/signin" className="text-blue-600 hover:underline px-1">
                                 Sign In
                             </Link>
                         </span>
