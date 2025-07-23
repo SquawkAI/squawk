@@ -40,7 +40,7 @@ export function AppSidebar() {
                                 rounded-xl
                                 "
                         >
-                            <FileText strokeWidth={1.25} size={36} />
+                            <FileText strokeWidth={1.5} size={36} />
                             <span className="text-sm font-semibold leading-none">
                                 Sources
                             </span>
@@ -56,7 +56,7 @@ export function AppSidebar() {
                                 rounded-xl
                             "
                         >
-                            <MessageSquareText strokeWidth={1.25} size={36} />
+                            <MessageSquareText strokeWidth={1.5} size={36} />
                             <span className="text-sm leading-none">Tone</span>
                         </Link>
 
@@ -70,7 +70,7 @@ export function AppSidebar() {
                                 rounded-xl
                             "
                         >
-                            <Share2 strokeWidth={1.25} size={36} />
+                            <Share2 strokeWidth={1.5} size={36} />
                             <span className="text-sm leading-none">Share</span>
                         </Link>
                     </div>
@@ -89,7 +89,7 @@ export function AppSidebar() {
                                 rounded-xl
                             "
                     >
-                        <User strokeWidth={1.25} size={36} />
+                        <User strokeWidth={1.5} size={36} />
                         <span className="text-sm leading-none">Profile</span>
                     </Link>
                 </div>
