@@ -8,7 +8,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
             <AppSidebar />
             <main className="flex-grow p-4 sm:p-6 lg:p-8">
-                <div className="flex sm:hidden mb-4">
+                <div className="flex md:hidden mb-4">
                     <SidebarTrigger />
                 </div>
 
@@ -17,7 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         My New Project
                     </h1>
 
-                    <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-6">
+                    <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-10">
                         <span className="text-base font-medium">My Projects</span>
                         <Button>+ New Project</Button>
                     </div>
