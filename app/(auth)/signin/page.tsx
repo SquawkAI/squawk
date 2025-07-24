@@ -4,6 +4,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-import { SignInWithGoogleButton } from "@/components/SignInWithGoogleButton";
+import SignInWithGoogleButton from "@/components/SignInWithGoogleButton";
 
 /* ─────── Schema ─────── */
 const signInFormSchema = z.object({
@@ -26,6 +27,10 @@ export default function SignIn() {
         defaultValues: { email: "", password: "" },
     });
 
+    const handleGoogleSignIn = () => {
+        signIn("google", { callbackUrl: "/dashboard" })
+    }
+    
     function onSubmit(values: z.infer<typeof signInFormSchema>) {
         console.log(values)
     }
@@ -42,7 +47,7 @@ export default function SignIn() {
                 Sign into Squawk
             </h1>
 
-            <SignInWithGoogleButton />
+            <SignInWithGoogleButton onClick={handleGoogleSignIn} />
 
             {/* ——— Form ——— */}
             <Form {...form}>
