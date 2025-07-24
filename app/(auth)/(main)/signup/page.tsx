@@ -4,6 +4,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,8 @@ import {
     FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+
+import SignInWithGoogleButton from "@/components/SignInWithGoogleButton";
 
 /* ─────── Schema ─────── */
 const signUpFormSchema = z.object({
@@ -28,6 +31,10 @@ export default function SignIn() {
         console.log(values)
     }
 
+    const handleGoogleSignIn = () => {
+        signIn("google", { callbackUrl: "/dashboard" })
+    }
+
     return (
         <div className="flex-1 space-y-8 text-center lg:text-left order-2 lg:order-1">
             <h1
@@ -39,6 +46,8 @@ export default function SignIn() {
             >
                 Sign up for free
             </h1>
+
+            <SignInWithGoogleButton onClick={handleGoogleSignIn} />
 
             {/* ——— Form ——— */}
             <Form {...form}>
