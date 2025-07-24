@@ -29,7 +29,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                     {/* Illustration */}
                     <div className="flex-1 flex justify-center lg:justify-end order-1 lg:order-2">
                         <Image
-                            src="/auth-graphic.png"
+                            src="/Hero Image.svg"
                             alt="Illustration"
                             priority
                             width={960}
