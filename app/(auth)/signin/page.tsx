@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
+import { SignInWithGoogleButton } from "@/components/SignInWithGoogleButton";
+
 /* ─────── Schema ─────── */
 const signInFormSchema = z.object({
     email: z.string().email("Enter a valid email").trim(),
@@ -39,6 +41,8 @@ export default function SignIn() {
             >
                 Sign into Squawk
             </h1>
+
+            <SignInWithGoogleButton />
 
             {/* ——— Form ——— */}
             <Form {...form}>
