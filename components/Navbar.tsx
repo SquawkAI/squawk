@@ -9,19 +9,21 @@ const Navbar: React.FC = () => {
         <header className="w-full border-b shrink-0 p-6 md:px-12">
             <div className="mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Image
-                        src="/squawk-logo-large.png"
-                        alt="SquawkAI Logo"
-                        priority
-                        width={200}
-                        height={200}
-                        sizes="
-                            (min-width: 1280px) 200px,
-                            (min-width: 768px) 160px,
-                            120px
-                        "
-                        className="w-[120px] md:w-[160px] xl:w-[200px] h-auto"
-                    />
+                    <Link href="/">
+                        <Image
+                            src="/squawk-logo-large.png"
+                            alt="SquawkAI Logo"
+                            priority
+                            width={200}
+                            height={200}
+                            sizes="
+                                (min-width: 1280px) 200px,
+                                (min-width: 768px) 160px,
+                                120px
+                            "
+                            className="w-[120px] md:w-[160px] xl:w-[200px] h-auto"
+                        />
+                    </Link>
                 </div>
 
                 <nav className="hidden lg:flex items-center gap-8 text-base font-medium">
@@ -32,7 +34,7 @@ const Navbar: React.FC = () => {
                     <Link href="/blog" className="hover:text-blue-600">Blog</Link>
 
                     <Button asChild>
-                        <Link href="/signin">Get Started</Link>
+                        <Link href="/signin">Sign In</Link>
                     </Button>
                 </nav>
             </div>
