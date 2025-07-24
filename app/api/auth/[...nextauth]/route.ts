@@ -11,19 +11,41 @@ export const authOptions: NextAuthOptions = {
     ],
     callbacks: {
         async signIn({ user }) {
+            // First check if user exists by email
+            const { data: existingUser } = await supabase
+                .from("users")
+                .select("id")
+                .eq("email", user.email)
+                .single();
 
-            const { error } = await supabase.from("users").upsert(
+            if (existingUser) {
+                // If user exists, return their UUID
+                user.id = existingUser.id;
+                return true;
+            }
+
+            // If user doesn't exist, Supabase will auto-generate a UUID
+            const { error } = await supabase.from("users").insert(
                 {
-                    id: user.id,
                     email: user.email,
                     name: user.name,
-                },
-                { onConflict: "email" }
+                }
             );
 
             if (error) {
                 console.error("Supabase error:", error.message);
                 throw new Error("SupabaseInsertFailed");
+            }
+
+            // Get the newly created user's UUID
+            const { data: newUser } = await supabase
+                .from("users")
+                .select("id")
+                .eq("email", user.email)
+                .single();
+
+            if (newUser) {
+                user.id = newUser.id;
             }
 
             return true;
