@@ -1,12 +1,13 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import {
-    UploadCloud,
-    Folder,
+    CloudArrowUp,
+    FolderSimple,
     FileText,
-    Trash2,
+    Trash,
     User,
-} from "lucide-react";
+    CaretRight,
+} from "@phosphor-icons/react/dist/ssr";
 
 const DashboardPage: React.FC = () => {
     return (
@@ -21,7 +22,7 @@ const DashboardPage: React.FC = () => {
 
                 {/* Upload area */}
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex items-center gap-4">
-                    <UploadCloud className="text-2xl text-gray-400" />
+                    <CloudArrowUp size={24} weight="regular" className="text-gray-400" />
                     <div>
                         <p className="font-medium">Upload Files</p>
                         <p className="text-sm text-gray-500">
@@ -43,22 +44,24 @@ const DashboardPage: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             <tr className="hover:bg-gray-50">
-                                <td className="px-4 py-3 flex items-center gap-2">
-                                    <Folder className="text-xl text-gray-500" />
+                                <td className="px-4 py-3 flex items-center gap-2 align-middle">
+                                    <FolderSimple size={20} weight="regular" className="text-gray-500" />
                                     <span>Chemistry</span>
                                 </td>
-                                <td className="px-4 py-3 text-right text-gray-400">
-                                    &gt;
+                                <td className="px-4 py-3 text-right align-middle">
+                                    <button className="text-gray-400 align-middle">
+                                        <CaretRight size={20} weight="regular" />
+                                    </button>
                                 </td>
                             </tr>
                             <tr className="hover:bg-gray-50">
-                                <td className="px-4 py-3 flex items-center gap-2">
-                                    <FileText className="text-xl text-gray-500" />
+                                <td className="px-4 py-3 flex items-center gap-2 align-middle">
+                                    <FileText size={20} weight="regular" className="text-gray-500" />
                                     <span>lecture-notes.pdf</span>
                                 </td>
-                                <td className="px-4 py-3 text-right">
-                                    <button className="text-gray-400 hover:text-red-600">
-                                        <Trash2 />
+                                <td className="px-4 py-3 text-right align-middle">
+                                    <button className="text-gray-400 hover:text-red-600 align-middle">
+                                        <Trash size={20} weight="regular" />
                                     </button>
                                 </td>
                             </tr>
@@ -70,7 +73,7 @@ const DashboardPage: React.FC = () => {
             {/* Right half */}
             <div className="w-1/2 flex items-center justify-center">
                 <div className="w-full h-full bg-white border rounded-lg p-8 flex flex-col items-center justify-center text-center text-gray-500">
-                    <Folder className="text-6xl mb-4" />
+                    <FolderSimple size={48} weight="regular" className="mb-4" />
                     <h2 className="text-xl font-semibold text-black mb-2">
                         No file selected
                     </h2>

@@ -7,7 +7,7 @@ import {
     SidebarGroup,
     SidebarHeader,
 } from "@/components/ui/sidebar";
-import { FileText, MessageSquareText, Share2, User } from "lucide-react";
+import { BookOpenText, FileText, ShareNetwork, User } from "@phosphor-icons/react/dist/ssr";
 
 export function AppSidebar() {
     return (
@@ -40,7 +40,7 @@ export function AppSidebar() {
                                 rounded-xl
                                 "
                         >
-                            <FileText strokeWidth={1.5} size={36} />
+                            <BookOpenText size={36} weight="regular" />
                             <span className="text-sm font-semibold leading-none">
                                 Sources
                             </span>
@@ -56,7 +56,7 @@ export function AppSidebar() {
                                 rounded-xl
                             "
                         >
-                            <MessageSquareText strokeWidth={1.5} size={36} />
+                            <FileText size={36} weight="regular" />
                             <span className="text-sm leading-none">Tone</span>
                         </Link>
 
@@ -70,7 +70,7 @@ export function AppSidebar() {
                                 rounded-xl
                             "
                         >
-                            <Share2 strokeWidth={1.5} size={36} />
+                            <ShareNetwork size={36} weight="regular" />
                             <span className="text-sm leading-none">Share</span>
                         </Link>
                     </div>
@@ -89,7 +89,7 @@ export function AppSidebar() {
                                 rounded-xl
                             "
                     >
-                        <User strokeWidth={1.5} size={36} />
+                        <User size={36} weight="regular" />
                         <span className="text-sm leading-none">Profile</span>
                     </Link>
                 </div>
