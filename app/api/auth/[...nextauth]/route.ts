@@ -1,9 +1,8 @@
-// app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { supabase } from "@/lib/supabase";
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -12,16 +11,15 @@ const handler = NextAuth({
     ],
     callbacks: {
         async signIn({ user }) {
-            const { error } = await supabase
-                .from("users")
-                .upsert(
-                    {
-                        id: user.id,
-                        email: user.email,
-                        name: user.name,
-                    },
-                    { onConflict: "email" }
-                );
+
+            const { error } = await supabase.from("users").upsert(
+                {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                },
+                { onConflict: "email" }
+            );
 
             if (error) {
                 console.error("Supabase error:", error.message);
@@ -32,10 +30,12 @@ const handler = NextAuth({
         },
     },
     pages: {
-        signIn: '/signin',
-        error: '/autherror'
+        signIn: "/signin",
+        error: "/autherror",
     },
     secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
