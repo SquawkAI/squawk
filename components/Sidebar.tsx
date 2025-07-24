@@ -84,10 +84,10 @@ export function AppSidebar() {
                         href="/profile"
                         className="
                             inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                text-gray-600 hover:bg-gray-100
-                                rounded-xl
-                            "
+                            px-3 py-2
+                            text-gray-600 hover:bg-gray-100
+                            rounded-xl
+                        "
                     >
                         <User size={36} weight="regular" />
                         <span className="text-sm leading-none">Profile</span>

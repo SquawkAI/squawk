@@ -11,7 +11,7 @@ import {
 
 const DashboardPage: React.FC = () => {
     return (
-        <div className="flex min-h-screen  gap-8">
+        <div className="flex min-h-screen gap-8">
             {/* Left half */}
             <div className="w-1/2 space-y-6">
                 {/* Title + Search */}
@@ -77,7 +77,9 @@ const DashboardPage: React.FC = () => {
                     <h2 className="text-xl font-semibold text-black mb-2">
                         No file selected
                     </h2>
-                    <p>Select a file or folder from the left to view or manage its details.</p>
+                    <p>
+                        Select a file or folder from the left to view or manage its details.
+                    </p>
                 </div>
             </div>
         </div>
