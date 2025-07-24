@@ -7,7 +7,13 @@ import {
     SidebarGroup,
     SidebarHeader,
 } from "@/components/ui/sidebar";
-import { FileText, MessageSquareText, Share2, User } from "lucide-react";
+
+import {
+    FiFileText,
+    FiMessageSquare,
+    FiShare2,
+    FiUser,
+} from "react-icons/fi";
 
 export function AppSidebar() {
     return (
@@ -40,7 +46,7 @@ export function AppSidebar() {
                                 rounded-xl
                                 "
                         >
-                            <FileText strokeWidth={1.5} size={36} />
+                            <FiFileText size={36} />
                             <span className="text-sm font-semibold leading-none">
                                 Sources
                             </span>
@@ -56,7 +62,7 @@ export function AppSidebar() {
                                 rounded-xl
                             "
                         >
-                            <MessageSquareText strokeWidth={1.5} size={36} />
+                            <FiMessageSquare size={36} />
                             <span className="text-sm leading-none">Tone</span>
                         </Link>
 
@@ -70,7 +76,7 @@ export function AppSidebar() {
                                 rounded-xl
                             "
                         >
-                            <Share2 strokeWidth={1.5} size={36} />
+                            <FiShare2 size={36} />
                             <span className="text-sm leading-none">Share</span>
                         </Link>
                     </div>
@@ -84,12 +90,12 @@ export function AppSidebar() {
                         href="/profile"
                         className="
                             inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                text-gray-600 hover:bg-gray-100
-                                rounded-xl
-                            "
+                            px-3 py-2
+                            text-gray-600 hover:bg-gray-100
+                            rounded-xl
+                        "
                     >
-                        <User strokeWidth={1.5} size={36} />
+                        <FiUser size={36} />
                         <span className="text-sm leading-none">Profile</span>
                     </Link>
                 </div>
