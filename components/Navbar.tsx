@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 const Navbar: React.FC = () => {
     return (
-        <header className="w-full border-b py-6 px-6 md:px-12">
+        <header className="w-full border-b shrink-0 p-6 md:px-12">
             <div className="mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Image
