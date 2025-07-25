@@ -15,7 +15,6 @@ interface FileItem {
   mime_type?: string;
   created_at: string;
 }
-
 interface FilesTableProps {
   refreshTrigger?: number;
   projectId: string;
