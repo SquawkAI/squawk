@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
+import AuthSessionProvider from "@/components/AuthSessionProvider";
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Sidebar";
@@ -29,7 +30,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
                     </div>
                 </header>
 
-                <div>{children}</div>
+                <AuthSessionProvider>
+                    <div>{children}</div>
+                </AuthSessionProvider>
             </main>
         </SidebarProvider>
     );
