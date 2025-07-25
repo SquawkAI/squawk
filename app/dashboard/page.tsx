@@ -1,15 +1,18 @@
+"use client";
+
 import React from "react";
 import { Input } from "@/components/ui/input";
-import {
-    CloudArrowUp,
-    FolderSimple,
-    FileText,
-    Trash,
-    User,
-    CaretRight,
-} from "@phosphor-icons/react/dist/ssr";
+import { FolderSimple } from "@phosphor-icons/react";
+import { FileUpload } from "@/components/FileUpload";
+import { FilesTable } from "@/components/FilesTable";
 
 const DashboardPage: React.FC = () => {
+    const [refreshTrigger, setRefreshTrigger] = React.useState(0);
+
+    const handleUploadSuccess = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
+
     return (
         <div className="flex min-h-screen gap-8">
             {/* Left half */}
@@ -21,53 +24,10 @@ const DashboardPage: React.FC = () => {
                 </div>
 
                 {/* Upload area */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex items-center gap-4">
-                    <CloudArrowUp size={24} weight="regular" className="text-gray-400" />
-                    <div>
-                        <p className="font-medium">Upload Files</p>
-                        <p className="text-sm text-gray-500">
-                            Drag and drop files here, or browse your computer
-                        </p>
-                    </div>
-                </div>
+                <FileUpload onUploadSuccess={handleUploadSuccess} />
 
                 {/* Sources table */}
-                <div className="bg-white border rounded-lg overflow-hidden">
-                    <table className="w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                                    Name
-                                </th>
-                                <th className="px-4 py-2" />
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            <tr className="hover:bg-gray-50">
-                                <td className="px-4 py-3 flex items-center gap-2 align-middle">
-                                    <FolderSimple size={20} weight="regular" className="text-gray-500" />
-                                    <span>Chemistry</span>
-                                </td>
-                                <td className="px-4 py-3 text-right align-middle">
-                                    <button className="text-gray-400 align-middle">
-                                        <CaretRight size={20} weight="regular" />
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr className="hover:bg-gray-50">
-                                <td className="px-4 py-3 flex items-center gap-2 align-middle">
-                                    <FileText size={20} weight="regular" className="text-gray-500" />
-                                    <span>lecture-notes.pdf</span>
-                                </td>
-                                <td className="px-4 py-3 text-right align-middle">
-                                    <button className="text-gray-400 hover:text-red-600 align-middle">
-                                        <Trash size={20} weight="regular" />
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <FilesTable refreshTrigger={refreshTrigger} />
             </div>
 
             {/* Right half */}
