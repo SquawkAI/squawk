@@ -6,6 +6,8 @@ import { CloudArrowUp } from "@phosphor-icons/react";
 
 type UploadedFile = { name: string;[key: string]: unknown };
 
+type UploadedFile = { id: string; name: string;[key: string]: unknown };
+
 interface FileUploadProps {
   onUploadSuccess?: (file: UploadedFile) => void;
   folderId?: string | null;
@@ -37,7 +39,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
     try {
       const formData = new FormData();
 
+<<<<<<< HEAD
       formData.append('projectId', '7c70ac69-7673-4be6-9efb-ba04c399e9a3');
+=======
+>>>>>>> 0f91fd0 (Code formatting changes + adding SWR for handling service call states)
       formData.append("file", file);
       if (folderId) {
         formData.append("folderId", folderId);
