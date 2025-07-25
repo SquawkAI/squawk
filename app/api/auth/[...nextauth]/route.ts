@@ -11,41 +11,23 @@ export const authOptions: NextAuthOptions = {
     ],
     callbacks: {
         async signIn({ user }) {
-            // First check if user exists by email
-            const { data: existingUser } = await supabase
-                .from("users")
-                .select("id")
-                .eq("email", user.email)
-                .single();
-
-            if (existingUser) {
-                // If user exists, return their UUID
-                user.id = existingUser.id;
-                return true;
-            }
-
-            // If user doesn't exist, Supabase will auto-generate a UUID
-            const { error } = await supabase.from("users").insert(
+            const { data: newUser, error } = await supabase.from("users").upsert(
                 {
                     email: user.email,
                     name: user.name,
-                }
-            );
+                },
+                { onConflict: "email", }
+            )
+            .select()
+            .single();
 
             if (error) {
                 console.error("Supabase error:", error.message);
                 throw new Error("SupabaseInsertFailed");
             }
 
-            // Get the newly created user's UUID
-            const { data: newUser } = await supabase
-                .from("users")
-                .select("id")
-                .eq("email", user.email)
-                .single();
-
-            if (newUser) {
-                user.id = newUser.id;
+            if(newUser) {
+                user.id = newUser.id
             }
 
             return true;
@@ -58,21 +40,8 @@ export const authOptions: NextAuthOptions = {
             return token;
         },
         async session({ session, token }) {
-            // Send user ID to the client
-            if (token?.uid) {
-                session.user.id = token.uid as string;
-            } else if (session.user?.email) {
-                // Fallback: fetch user ID from database for existing sessions
-                const { data: existingUser } = await supabase
-                    .from("users")
-                    .select("id")
-                    .eq("email", session.user.email)
-                    .single();
-                
-                if (existingUser) {
-                    session.user.id = existingUser.id;
-                }
-            }
+            session.user.id = token.uid as string;
+
             return session;
         },
     },
