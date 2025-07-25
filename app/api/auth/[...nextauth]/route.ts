@@ -50,6 +50,31 @@ export const authOptions: NextAuthOptions = {
 
             return true;
         },
+        async jwt({ token, user }) {
+            // Persist the user ID in the token
+            if (user?.id) {
+                token.uid = user.id;
+            }
+            return token;
+        },
+        async session({ session, token }) {
+            // Send user ID to the client
+            if (token?.uid) {
+                session.user.id = token.uid as string;
+            } else if (session.user?.email) {
+                // Fallback: fetch user ID from database for existing sessions
+                const { data: existingUser } = await supabase
+                    .from("users")
+                    .select("id")
+                    .eq("email", session.user.email)
+                    .single();
+                
+                if (existingUser) {
+                    session.user.id = existingUser.id;
+                }
+            }
+            return session;
+        },
     },
     pages: {
         signIn: "/signin",
