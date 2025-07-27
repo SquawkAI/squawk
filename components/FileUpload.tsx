@@ -3,9 +3,8 @@
 import React, { useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { CloudArrowUp } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
 
-type UploadedFile = { id: string; name: string;[key: string]: unknown };
+type UploadedFile = { name: string;[key: string]: unknown };
 
 interface FileUploadProps {
   onUploadSuccess?: (file: UploadedFile) => void;
@@ -37,6 +36,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
     try {
       const formData = new FormData();
 
+      formData.append('projectId', '7c70ac69-7673-4be6-9efb-ba04c399e9a3');
       formData.append("file", file);
       if (folderId) {
         formData.append("folderId", folderId);
