@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const uploadedPaths: string[] = [];
+  const uploadedPaths = [];
 
   for (const file of files) {
     if (!(file instanceof File)) continue;
@@ -38,10 +38,33 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    uploadedPaths.push(storagePath);
+    const { data, error: insertError } = await supabase.from("files").insert({
+      name: file.name,
+      size: file.size,
+      mime_type: file.type,
+      storage_path: storagePath,
+      project_id: projectId as string,
+    }).select().single();
+
+    if (!data || insertError) {
+      return new Response(JSON.stringify({ error: insertError.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    uploadedPaths.push({
+      id: data.id,
+      name: data.name,
+      size: data.size,
+      mime_type: data.mime_type,
+      storage_path: data.storage_path,
+      createdAt: data.created_at,
+      project_id: data.project_id,
+    });
   }
 
-  return new Response(JSON.stringify({ messsage: 'success' }), {
+  return new Response(JSON.stringify({ messsage: 'success', paths: uploadedPaths }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
