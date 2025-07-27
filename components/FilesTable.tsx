@@ -14,6 +14,7 @@ interface FileItem {
   size?: number;
   mime_type?: string;
   created_at: string;
+  status: "processing" | "completed" | "failed"
 }
 
 interface FilesTableProps {
@@ -153,10 +154,58 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                 className={`hover:bg-gray-50 ${deletingFile === file.id ? "opacity-50" : ""
                   }`}
               >
+
                 <td className="px-4 py-3 flex items-center gap-2">
                   <FileText size={20} className="text-gray-500" />
-                  {file.name}
+                  <span>{file.name}</span>
+
+                  {file.status === "processing" && (
+                    <span className="ml-2 flex items-center gap-1 text-xs text-blue-500 font-medium">
+                      <svg
+                        className="animate-spin h-4 w-4 text-blue-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+                        />
+                      </svg>
+                      Processing...
+                    </span>
+                  )}
+
+                  {file.status === "failed" && (
+                    <span className="ml-2 flex items-center gap-1 text-xs text-red-600 font-medium">
+                      <svg
+                        className="h-4 w-4 text-red-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z"
+                        />
+                      </svg>
+                      Failed
+                    </span>
+                  )}
                 </td>
+
                 <td className="px-4 py-3 text-sm text-gray-500">
                   {formatFileSize(file.size)}
                 </td>
