@@ -63,7 +63,7 @@ const formatFileSize = (bytes?: number) => {
   if (!bytes) return "";
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   const sizes = ["Bytes", "KB", "MB", "GB"];
-  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
 };
 
 
@@ -152,22 +152,26 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                 className={`hover:bg-gray-50 ${deletingFile === file.id ? "opacity-50" : ""
                   }`}
               >
-                <td className="px-4 py-3 flex items-center gap-2">
-                  <FileText size={20} className="text-gray-500" />
-                  {file.name}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2 max-w-md truncate">
+                    <FileText size={20} className="text-gray-500 flex-shrink-0" />
+                    <span className="truncate">{file.name}</span>
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-500">
                   {formatFileSize(file.size)}
                 </td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => handleDelete(file.id, file.name)}
-                    disabled={deletingFile === file.id}
-                    className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title={`Delete ${file.name}`}
-                  >
-                    <Trash size={20} />
-                  </button>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end items-center">
+                    <button
+                        onClick={() => handleDelete(file.id, file.name)}
+                        disabled={deletingFile === file.id}
+                        className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title={`Delete ${file.name}`}
+                    >
+                        <Trash size={20} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
