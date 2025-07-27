@@ -1,78 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import type { NextRequest } from 'next/server'
+
 import { supabase } from "@/lib/supabase";
 
-export async function POST(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export async function POST(req: NextRequest) {
+  const formData = await req.formData();
 
-    const formData = await request.formData();
-    const file = formData.get("file") as File;
-    const folderId = formData.get("folderId") as string | null;
+  const projectId = formData.get("projectId");
+  const files = formData.getAll("file");
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
+  if (!projectId || files.length === 0) {
+    return new Response(JSON.stringify({ error: "Missing projectId or files" }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
-    // Generate unique file path
-    const timestamp = Date.now();
-    const fileName = file.name;
-    const storagePath = `${session.user.id}/${timestamp}-${fileName}`;
+  const uploadedPaths: string[] = [];
 
-    // Upload file to Supabase storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+  for (const file of files) {
+    if (!(file instanceof File)) continue;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const storagePath = `${projectId}/${file.name}`;
+
+    const { error } = await supabase.storage
       .from("user-uploads")
-      .upload(storagePath, file, {
-        cacheControl: "3600",
-        upsert: false,
+      .upload(storagePath, buffer, {
+        contentType: file.type || "application/octet-stream",
+        upsert: true,
       });
 
-    if (uploadError) {
-      console.error("Storage upload error:", uploadError);
-      return NextResponse.json(
-        { error: "Failed to upload file to storage" },
-        { status: 500 }
-      );
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Insert file record into database
-    const { data: fileRecord, error: dbError } = await supabase
-      .from("files")
-      .insert({
-        user_id: session.user.id,
-        folder_id: folderId || null,
-        name: fileName,
-        size: file.size,
-        mime_type: file.type,
-        storage_path: storagePath,
-      })
-      .select()
-      .single();
-
-    if (dbError) {
-      console.error("Database insert error:", dbError);
-      // Clean up uploaded file if database insert fails
-      await supabase.storage.from("user-uploads").remove([storagePath]);
-      return NextResponse.json(
-        { error: "Failed to save file record" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      message: "File uploaded successfully",
-      file: fileRecord,
-    });
-  } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    uploadedPaths.push(storagePath);
   }
-} 
+
+  return new Response(JSON.stringify({ messsage: 'success' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
