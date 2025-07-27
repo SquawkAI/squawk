@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import {
   FileText,
   Trash,
+  FolderSimple,
 } from "@phosphor-icons/react";
 
 interface FileItem {
@@ -67,12 +68,45 @@ const formatFileSize = (bytes?: number) => {
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
 };
 
+// small gluable UI parts
+const LoadingState = () => (
+  <div className="bg-white border rounded-lg p-8 text-center">
+    <p className="text-gray-500">Loading files...</p>
+  </div>
+);
+
+const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void; }) => (
+  <div className="bg-white border rounded-lg p-8 text-center">
+    <p className="text-red-500 mb-4">Error: {message}</p>
+    <div className="space-x-2">
+      <button onClick={onRetry} className="text-blue-500 hover:underline">
+        Try again
+      </button>
+    </div>
+  </div>
+);
+
+const EmptyState = ({ isSearching }: { isSearching?: boolean }) => (
+  <div className="bg-white border rounded-lg p-8 text-center">
+    <FileText
+      size={48}
+      weight="regular"
+      className="mx-auto mb-4 text-gray-400"
+    />
+    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+      {isSearching ? "No files found" : "No files yet"}
+    </h3>
+    <p className="text-gray-500">
+      {isSearching 
+        ? "No files match your search. Try adjusting your search terms." 
+        : "Upload your first file to get started."
+      }
+    </p>
+  </div>
+);
 
 export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectId, searchTerm = "" }) => {
   const { loading, error, files, refresh } = useFiles(projectId, refreshTrigger);
-
-  const [deletingFile, setDeletingFile] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Filter files based on search term
   const filteredFiles = useMemo(() => {
@@ -82,6 +116,9 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
       file.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [files, searchTerm]);
+
+  const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleDelete = useCallback(
     async (fileId: string, fileName: string) => {
@@ -109,44 +146,12 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
     [refresh]
   );
 
-  if (loading) return (
-    <div className="bg-white border rounded-lg p-8 text-center">
-      <p className="text-gray-500">Loading files...</p>
-    </div>
-  )
-
-  if (error) return (
-    <div className="bg-white border rounded-lg p-8 text-center">
-      <p className="text-red-500 mb-4">Error: {error.message}</p>
-      <button onClick={() => refresh()} className="text-blue-500 hover:underline">
-        Try again
-      </button>
-    </div>
-  )
-
-  if (!files.length) return (
-    <div className="bg-white border rounded-lg p-8 text-center">
-      <FileText
-        size={48}
-        weight="regular"
-        className="mx-auto mb-4 text-gray-400"
-      />
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">No files yet</h3>
-      <p className="text-gray-500">Upload your first file to get started.</p>
-    </div>
-  );
-
-  if (searchTerm.trim() && !filteredFiles.length) return (
-    <div className="bg-white border rounded-lg p-8 text-center">
-      <FileText
-        size={48}
-        weight="regular"
-        className="mx-auto mb-4 text-gray-400"
-      />
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">No files found</h3>
-      <p className="text-gray-500">No files match your search for "{searchTerm}".</p>
-    </div>
-  );
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error.message} onRetry={refresh} />;
+  if (!filteredFiles.length) {
+    const isSearching = searchTerm.trim().length > 0;
+    return <EmptyState isSearching={isSearching} />;
+  }
 
   return (
     <div className="space-y-4">
@@ -185,12 +190,12 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                 <td className="px-4 py-3">
                   <div className="flex justify-end items-center">
                     <button
-                        onClick={() => handleDelete(file.id, file.name)}
-                        disabled={deletingFile === file.id}
-                        className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        title={`Delete ${file.name}`}
+                      onClick={() => handleDelete(file.id, file.name)}
+                      disabled={deletingFile === file.id}
+                      className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title={`Delete ${file.name}`}
                     >
-                        <Trash size={20} />
+                      <Trash size={20} />
                     </button>
                   </div>
                 </td>

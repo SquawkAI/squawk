@@ -66,9 +66,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
   }, [session, folderId, onUploadSuccess]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      uploadFile(file);
+    const files = e.target.files;
+    if (files) {
+      // Upload each file individually
+      Array.from(files).forEach(file => uploadFile(file));
     }
   };
 
@@ -77,10 +78,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
 
     setDragOver(false);
 
-    const file = e.dataTransfer.files?.[0];
+    const files = e.dataTransfer.files;
 
-    if (file) {
-      uploadFile(file);
+    if (files) {
+      // Upload each file individually
+      Array.from(files).forEach(file => uploadFile(file));
     }
   };
 
@@ -98,7 +100,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
 
   return (
     <div className="space-y-4">
-      <input type="file" ref={fileInputRef} onChange={onChange} className="hidden" />
+      <input type="file" ref={fileInputRef} onChange={onChange} className="hidden" multiple />
 
       <div
         className={`border-2 border-dashed ${borderColor} rounded-lg p-6 cursor-pointer hover:border-gray-400 transition-colors`}
@@ -112,7 +114,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
           <div>
             <p className="font-medium">{uploading ? "Uploading..." : "Upload Files"}</p>
             <p className="text-sm text-gray-500">
-              {uploading ? "Please wait while your file is uploaded" : "Click or drag & drop a file here"}
+              {uploading ? "Please wait while your files are uploaded" : "Click or drag & drop files here (multiple files supported)"}
             </p>
           </div>
         </div>
