@@ -18,6 +18,7 @@ interface FileItem {
 interface FilesTableProps {
   refreshTrigger?: number;
   projectId: string;
+  searchTerm?: string;
 }
 
 // fetcher that throws on HTTP error
@@ -67,11 +68,20 @@ const formatFileSize = (bytes?: number) => {
 };
 
 
-export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectId }) => {
+export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectId, searchTerm = "" }) => {
   const { loading, error, files, refresh } = useFiles(projectId, refreshTrigger);
 
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Filter files based on search term
+  const filteredFiles = useMemo(() => {
+    if (!searchTerm.trim()) return files;
+    
+    return files.filter(file => 
+      file.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [files, searchTerm]);
 
   const handleDelete = useCallback(
     async (fileId: string, fileName: string) => {
@@ -114,7 +124,6 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
     </div>
   )
 
-
   if (!files.length) return (
     <div className="bg-white border rounded-lg p-8 text-center">
       <FileText
@@ -124,6 +133,18 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
       />
       <h3 className="text-lg font-semibold text-gray-800 mb-2">No files yet</h3>
       <p className="text-gray-500">Upload your first file to get started.</p>
+    </div>
+  );
+
+  if (searchTerm.trim() && !filteredFiles.length) return (
+    <div className="bg-white border rounded-lg p-8 text-center">
+      <FileText
+        size={48}
+        weight="regular"
+        className="mx-auto mb-4 text-gray-400"
+      />
+      <h3 className="text-lg font-semibold text-gray-800 mb-2">No files found</h3>
+      <p className="text-gray-500">No files match your search for "{searchTerm}".</p>
     </div>
   );
 
@@ -146,7 +167,7 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
           </thead>
 
           <tbody className="divide-y divide-gray-200">
-            {files.map((file) => (
+            {filteredFiles.map((file) => (
               <tr
                 key={file.id}
                 className={`hover:bg-gray-50 ${deletingFile === file.id ? "opacity-50" : ""
