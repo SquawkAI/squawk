@@ -27,7 +27,7 @@ const DashboardPage: React.FC = () => {
                 <FileUpload onUploadSuccess={handleUploadSuccess} />
 
                 {/* Sources table */}
-                <FilesTable refreshTrigger={refreshTrigger} />
+                <FilesTable refreshTrigger={refreshTrigger} projectId="7c70ac69-7673-4be6-9efb-ba04c399e9a3" />
             </div>
 
             {/* Right half */}
