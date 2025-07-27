@@ -4,10 +4,8 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
 import {
-  FolderSimple,
   FileText,
   Trash,
-  CaretRight,
 } from "@phosphor-icons/react";
 
 interface FileItem {
@@ -17,14 +15,10 @@ interface FileItem {
   mime_type?: string;
   created_at: string;
 }
-interface FolderItem {
-  id: string;
-  name: string;
-  created_at: string;
-}
+
 interface FilesTableProps {
   refreshTrigger?: number;
-  folderId?: string | null;
+  projectId: string;
 }
 
 // fetcher that throws on HTTP error
@@ -35,26 +29,24 @@ const fetcher = (url: string) => fetch(url, { credentials: "include" }).then(asy
 });
 
 // hook to encapsulate SWR logic
-function useFiles(folderId: string | null, refreshTrigger?: number) {
+function useFiles(projectId: string | null, refreshTrigger?: number) {
   const { data: session, status } = useSession();
   const isAuth = status === "authenticated" && !!session?.user?.id;
 
   const url = useMemo(() => {
-    if (!isAuth) return null;
-
-    const params = new URLSearchParams();
-
-    if (folderId) params.set("folderId", folderId);
+    if (!isAuth || !projectId) return null;
+    const params = new URLSearchParams({ projectId });
 
     return `/api/files?${params.toString()}`;
-  }, [isAuth, folderId]);
+  }, [isAuth, projectId]);
 
-  const { data, error, isValidating, mutate } = useSWR<{ files: FileItem[]; folders: FolderItem[]; }>(url, fetcher, {
+  const { data, error, isValidating, mutate } = useSWR<{ files: FileItem[] }>(url, fetcher, {
     revalidateOnFocus: false,
     refreshInterval: 0,
-  });
+  }
+  );
 
-  // if parent component wants a manual refresh
+  // Allow parent component to trigger refresh
   useEffect(() => {
     if (url && refreshTrigger !== undefined) mutate();
   }, [url, refreshTrigger, mutate]);
@@ -63,7 +55,6 @@ function useFiles(folderId: string | null, refreshTrigger?: number) {
     loading: status === "loading" || isValidating,
     error: error as Error | null,
     files: data?.files ?? [],
-    folders: data?.folders ?? [],
     refresh: mutate,
   };
 }
@@ -71,57 +62,23 @@ function useFiles(folderId: string | null, refreshTrigger?: number) {
 // helper to humanize bytes
 const formatFileSize = (bytes?: number) => {
   if (!bytes) return "";
-
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   const sizes = ["Bytes", "KB", "MB", "GB"];
-
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
 };
 
-// small gluable UI parts
-const LoadingState = () => (
-  <div className="bg-white border rounded-lg p-8 text-center">
-    <p className="text-gray-500">Loading files...</p>
-  </div>
-);
 
-const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void; }) => (
-  <div className="bg-white border rounded-lg p-8 text-center">
-    <p className="text-red-500 mb-4">Error: {message}</p>
-    <div className="space-x-2">
-      <button onClick={onRetry} className="text-blue-500 hover:underline">
-        Try again
-      </button>
-    </div>
-  </div>
-);
-
-const EmptyState = () => (
-  <div className="bg-white border rounded-lg p-8 text-center">
-    <FolderSimple
-      size={48}
-      weight="regular"
-      className="mx-auto mb-4 text-gray-400"
-    />
-    <h3 className="text-lg font-semibold text-gray-800 mb-2">No files yet</h3>
-    <p className="text-gray-500">Upload your first file to get started.</p>
-  </div>
-);
-
-export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, folderId = null }) => {
-  const { loading, error, files, folders, refresh } = useFiles(folderId, refreshTrigger);
+export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectId }) => {
+  const { loading, error, files, refresh } = useFiles(projectId, refreshTrigger);
 
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleDelete = useCallback(
     async (fileId: string, fileName: string) => {
-      if (!confirm(`Delete "${fileName}"? This cannot be undone.`)) {
-        return;
-      }
+      if (!confirm(`Delete "${fileName}"? This cannot be undone.`)) return;
 
       setDeletingFile(fileId);
-
       try {
         const res = await fetch(`/api/files/${fileId}`, {
           method: "DELETE",
@@ -129,12 +86,10 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, folderId
         });
 
         const payload = await res.json();
-
         if (!res.ok) throw new Error(payload.error || "Delete failed");
 
         setSuccessMsg(`"${fileName}" deleted`);
         setTimeout(() => setSuccessMsg(null), 3000);
-
         await refresh();
       } catch (err) {
         alert((err as Error).message);
@@ -145,9 +100,33 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, folderId
     [refresh]
   );
 
-  if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error.message} onRetry={refresh} />;
-  if (!folders.length && !files.length) return <EmptyState />;
+  if (loading) return (
+    <div className="bg-white border rounded-lg p-8 text-center">
+      <p className="text-gray-500">Loading files...</p>
+    </div>
+  )
+
+  if (error) return (
+    <div className="bg-white border rounded-lg p-8 text-center">
+      <p className="text-red-500 mb-4">Error: {error.message}</p>
+      <button onClick={() => refresh()} className="text-blue-500 hover:underline">
+        Try again
+      </button>
+    </div>
+  )
+
+
+  if (!files.length) return (
+    <div className="bg-white border rounded-lg p-8 text-center">
+      <FileText
+        size={48}
+        weight="regular"
+        className="mx-auto mb-4 text-gray-400"
+      />
+      <h3 className="text-lg font-semibold text-gray-800 mb-2">No files yet</h3>
+      <p className="text-gray-500">Upload your first file to get started.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -161,32 +140,13 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, folderId
         <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                Name
-              </th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                Size
-              </th>
+              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Name</th>
+              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Size</th>
               <th className="px-4 py-2" />
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-200">
-            {folders.map((f) => (
-              <tr key={f.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 flex items-center gap-2">
-                  <FolderSimple size={20} className="text-gray-500" />
-                  {f.name}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-500">—</td>
-                <td className="px-4 py-3 text-right">
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <CaretRight size={20} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-
             {files.map((file) => (
               <tr
                 key={file.id}
