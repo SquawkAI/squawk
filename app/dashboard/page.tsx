@@ -15,9 +15,9 @@ const DashboardPage: React.FC = () => {
     };
 
     return (
-        <div className="flex min-h-screen gap-8">
+        <div className="flex h-full gap-8">
             {/* Left half */}
-            <div className="w-1/2 space-y-6">
+            <div className="w-1/2 space-y-6 overflow-y-auto">
                 {/* Title + Search */}
                 <div className="space-y-4">
                     <h1 className="text-3xl font-semibold">Sources</h1>

@@ -114,7 +114,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
           <div>
             <p className="font-medium">{uploading ? "Uploading..." : "Upload Files"}</p>
             <p className="text-sm text-gray-500">
-              {uploading ? "Please wait while your files are uploaded" : "Click or drag & drop files here (multiple files supported)"}
+              {uploading ? "Please wait while your files are uploaded" : "Click or drag & drop files here."}
             </p>
           </div>
         </div>
