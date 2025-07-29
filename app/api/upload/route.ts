@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
       storage_path: data.storage_path,
       createdAt: data.created_at,
       project_id: data.project_id,
+      status: "processing"
     });
   }
 
