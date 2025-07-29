@@ -41,11 +41,17 @@ function useFiles(projectId: string | null, refreshTrigger?: number) {
     return `/api/files?${params.toString()}`;
   }, [isAuth, projectId]);
 
-  const { data, error, isValidating, mutate } = useSWR<{ files: FileItem[] }>(url, fetcher, {
-    revalidateOnFocus: false,
-    refreshInterval: 0,
-  }
+  const { data, error, mutate } = useSWR<{ files: FileItem[] }>(
+    url,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: true,
+    }
   );
+
+  const isInitialLoading = status === "loading" || (!!url && data === undefined && !error);
 
   // Allow parent component to trigger refresh
   useEffect(() => {
@@ -53,11 +59,13 @@ function useFiles(projectId: string | null, refreshTrigger?: number) {
   }, [url, refreshTrigger, mutate]);
 
   return {
-    loading: status === "loading" || isValidating,
+    loading: isInitialLoading,
     error: error as Error | null,
     files: data?.files ?? [],
     refresh: mutate,
+    mutateFiles: mutate,
   };
+
 }
 
 // helper to humanize bytes
@@ -75,7 +83,7 @@ const LoadingState = () => (
   </div>
 );
 
-const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void; }) => (
+const SWRErrorState = ({ message, onRetry }: { message: string; onRetry: () => void; }) => (
   <div className="bg-white border rounded-lg p-8 text-center">
     <p className="text-red-500 mb-4">Error: {message}</p>
     <div className="space-x-2">
@@ -97,8 +105,8 @@ const EmptyState = ({ isSearching }: { isSearching?: boolean }) => (
       {isSearching ? "No files found" : "No files yet"}
     </h3>
     <p className="text-gray-500">
-      {isSearching 
-        ? "No files match your search. Try adjusting your search terms." 
+      {isSearching
+        ? "No files match your search. Try adjusting your search terms."
         : "Upload your first file to get started."
       }
     </p>
@@ -106,48 +114,68 @@ const EmptyState = ({ isSearching }: { isSearching?: boolean }) => (
 );
 
 export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectId, searchTerm = "" }) => {
-  const { loading, error, files, refresh } = useFiles(projectId, refreshTrigger);
+  const { loading, error: swrError, files, refresh, mutateFiles } = useFiles(projectId, refreshTrigger);
+  const [error, setError] = useState<Error | null>(null);
 
   // Filter files based on search term
   const filteredFiles = useMemo(() => {
     if (!searchTerm.trim()) return files;
-    
-    return files.filter(file => 
+
+    return files.filter(file =>
       file.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [files, searchTerm]);
 
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleDelete = useCallback(
     async (fileId: string, fileName: string) => {
       if (!confirm(`Delete "${fileName}"? This cannot be undone.`)) return;
 
       setDeletingFile(fileId);
+
       try {
-        const res = await fetch(`/api/files/${fileId}`, {
-          method: "DELETE",
-          credentials: "include",
-        });
+        await mutateFiles(
+          // Perform the server mutation mutate
+          async (current) => {
+            const res = await fetch(`/api/files/${fileId}`, {
+              method: "DELETE",
+              credentials: "include",
+            });
+            const payload = await res.json();
+            if (!res.ok) throw new Error(payload.error || "Delete failed");
 
-        const payload = await res.json();
-        if (!res.ok) throw new Error(payload.error || "Delete failed");
+            // Return the new cache value (same as optimisticData)
+            return {
+              files: (current?.files ?? []).filter((f) => f.id !== fileId),
+            };
+          },
+          {
+            // Instantly update the UI
+            optimisticData: (current) => ({
+              files: (current?.files ?? []).filter((f) => f.id !== fileId),
+            }),
+            rollbackOnError: true,
+            revalidate: false,
+            populateCache: true,
+          }
+        );
 
-        setSuccessMsg(`"${fileName}" deleted`);
-        setTimeout(() => setSuccessMsg(null), 3000);
-        await refresh();
-      } catch (err) {
-        alert((err as Error).message);
+
+        // Optional: verify with a silent background revalidate later
+        // void refresh();
+      } catch (err: unknown) {
+        setError(err as Error);
+        setTimeout(() => setError(null), 5000);
       } finally {
         setDeletingFile(null);
       }
     },
-    [refresh]
+    [mutateFiles]
   );
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error.message} onRetry={refresh} />;
+  if (swrError) return <SWRErrorState message={swrError.message} onRetry={refresh} />;
   if (!filteredFiles.length) {
     const isSearching = searchTerm.trim().length > 0;
     return <EmptyState isSearching={isSearching} />;
@@ -155,9 +183,9 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
 
   return (
     <div className="space-y-4">
-      {successMsg && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-          <p className="text-sm text-green-600">{successMsg}</p>
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{error.message}</p>
         </div>
       )}
 

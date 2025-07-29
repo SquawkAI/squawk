@@ -11,6 +11,7 @@ interface FileUploadProps {
   folderId?: string | null;
 }
 
+// TODO: Use React Query or SWR to provide optimistic updates and not refresh when the file is uploaded
 export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderId = null }) => {
   const { data: session, status } = useSession();
 
@@ -60,6 +61,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
     } catch (err) {
       console.error("Upload error:", err);
       setError(err instanceof Error ? err.message : "Upload failed");
+      setTimeout(() => setError(null), 5000);
     } finally {
       setUploading(false);
     }
