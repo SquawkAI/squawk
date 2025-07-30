@@ -19,6 +19,9 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 app = FastAPI()
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# TODO: Determine best embeddings
+embeddings_model = OpenAIEmbeddings()
+
 SUPPORTED_TYPES = {
     ".pdf": PyPDFLoader,
     ".txt": TextLoader,
@@ -52,20 +55,15 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
             chunk_size=500, chunk_overlap=50)
         chunks = splitter.split_documents(documents)
 
-        # TODO: Determine best embeddings
-        embeddings = OpenAIEmbeddings()
-        vectorstore = Chroma.from_documents(
-            chunks, embeddings, persist_directory=None)
-
         if (not check_file_id(file_id)):
             raise HTTPException(status_code=400, detail="file_id not found")
 
-        save_embeddings(file_id, chunks)
+        save_chunks_and_embeddings(file_id, chunks)
 
         os.remove(temp_path)
     except Exception as e:
         os.remove(temp_path)
-        
+
         raise HTTPException(
             status_code=500, detail=f"Error processing file: {str(e)}")
 
@@ -83,12 +81,21 @@ def check_file_id(file_id):
 
     return True
 
-def save_embeddings(file_id, chunks):
+def save_chunks_and_embeddings(file_id, chunks):
     for i, chunk in enumerate(chunks):
-        supabase.table("chunks").insert({
+        chunk_result = supabase.table("chunks").insert({
             "file_id": file_id,
             "content": chunk.page_content,
             "chunk_index": i
+        }).execute()
+
+        chunk_id = chunk_result.data[0]["id"]
+
+        vector = embeddings_model.embed_query(chunk.page_content)
+
+        supabase.table("embeddings").insert({
+            "chunk_id": chunk_id,
+            "embedding": vector
         }).execute()
 
     supabase.table("files").update(
