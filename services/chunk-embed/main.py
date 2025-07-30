@@ -2,17 +2,22 @@ import os
 from dotenv import load_dotenv
 
 import uuid
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from supabase import create_client, Client
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader, UnstructuredWordDocumentLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 load_dotenv()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
 app = FastAPI()
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 SUPPORTED_TYPES = {
     ".pdf": PyPDFLoader,
@@ -25,9 +30,8 @@ SUPPORTED_TYPES = {
 async def status_check():
     return {"status": "ok", "message": "Embedding service is live"}
 
-
 @app.post('/')
-async def embed_file(file: UploadFile = File(...)):
+async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
     ext = os.path.splitext(file.filename)[1].lower()
 
     if ext not in SUPPORTED_TYPES:
@@ -44,15 +48,23 @@ async def embed_file(file: UploadFile = File(...)):
         documents = loader.load()
 
         # TODO: Determine best chunk_size and chunk_overlap
-        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500, chunk_overlap=50)
         chunks = splitter.split_documents(documents)
 
         # TODO: Determine best embeddings
         embeddings = OpenAIEmbeddings()
-        vectorstore = Chroma.from_documents(chunks, embeddings, persist_directory=None)
+        vectorstore = Chroma.from_documents(
+            chunks, embeddings, persist_directory=None)
 
         for i, chunk in enumerate(chunks):
-            print(f"Chunk {i+1}:\n{chunk.page_content}\n{'-' * 40}")
+            supabase.table("chunks").insert({
+                "file_id": file_id,
+                "content": chunk.page_content,
+                "chunk_index": i
+            }).execute()
+
+        supabase.table("files").update({"status": "completed"}).eq("id", file_id).execute()
 
         os.remove(temp_path)
     except Exception as e:
