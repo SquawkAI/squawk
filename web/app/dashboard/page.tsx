@@ -8,26 +8,35 @@ import { FilesTable } from "@/components/FilesTable";
 
 const DashboardPage: React.FC = () => {
     const [refreshTrigger, setRefreshTrigger] = React.useState(0);
+    const [searchTerm, setSearchTerm] = React.useState("");
 
     const handleUploadSuccess = () => {
         setRefreshTrigger(prev => prev + 1);
     };
 
     return (
-        <div className="flex min-h-screen gap-8">
+        <div className="flex h-full gap-8">
             {/* Left half */}
-            <div className="w-1/2 space-y-6">
+            <div className="w-1/2 space-y-6 overflow-y-auto">
                 {/* Title + Search */}
                 <div className="space-y-4">
                     <h1 className="text-3xl font-semibold">Sources</h1>
-                    <Input placeholder="Search your sources" />
+                    <Input 
+                        placeholder="Search your sources" 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
 
                 {/* Upload area */}
                 <FileUpload onUploadSuccess={handleUploadSuccess} />
 
                 {/* Sources table */}
-                <FilesTable refreshTrigger={refreshTrigger} projectId="7c70ac69-7673-4be6-9efb-ba04c399e9a3" />
+                <FilesTable 
+                    refreshTrigger={refreshTrigger} 
+                    projectId="7c70ac69-7673-4be6-9efb-ba04c399e9a3"
+                    searchTerm={searchTerm}
+                />
             </div>
 
             {/* Right half */}
