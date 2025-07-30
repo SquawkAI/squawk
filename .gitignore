@@ -37,3 +37,21 @@ web/.tsbuildinfo
 # yarn.lock
 # package-lock.json
 # pnpm-lock.yaml
+
+# Python environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+.eggs/
+dist/
+build/
