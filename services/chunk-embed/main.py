@@ -61,6 +61,9 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
 
         os.remove(temp_path)
     except Exception as e:
+        supabase.table("files").update(
+            {"status": "failed"}).eq("id", file_id).execute()
+        
         os.remove(temp_path)
 
         raise HTTPException(
