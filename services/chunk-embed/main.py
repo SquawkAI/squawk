@@ -57,17 +57,15 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
         vectorstore = Chroma.from_documents(
             chunks, embeddings, persist_directory=None)
 
-        for i, chunk in enumerate(chunks):
-            supabase.table("chunks").insert({
-                "file_id": file_id,
-                "content": chunk.page_content,
-                "chunk_index": i
-            }).execute()
+        if (not check_file_id(file_id)):
+            raise HTTPException(status_code=400, detail="file_id not found")
 
-        supabase.table("files").update({"status": "completed"}).eq("id", file_id).execute()
+        save_embeddings(file_id, chunks)
 
         os.remove(temp_path)
     except Exception as e:
+        os.remove(temp_path)
+        
         raise HTTPException(
             status_code=500, detail=f"Error processing file: {str(e)}")
 
@@ -75,3 +73,23 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
         "message": f"Embedded {file.filename} successfully",
         "chunks": len(chunks),
     }
+
+def check_file_id(file_id):
+    file_check = supabase.table("files").select(
+        "id").eq("id", str(file_id)).execute()
+
+    if not file_check.data:
+        return False
+
+    return True
+
+def save_embeddings(file_id, chunks):
+    for i, chunk in enumerate(chunks):
+        supabase.table("chunks").insert({
+            "file_id": file_id,
+            "content": chunk.page_content,
+            "chunk_index": i
+        }).execute()
+
+    supabase.table("files").update(
+        {"status": "completed"}).eq("id", file_id).execute()
