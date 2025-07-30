@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import axios from "axios";
 
 import { supabase } from "@/lib/supabase";
 
@@ -51,6 +52,16 @@ export async function POST(req: NextRequest) {
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
+
+    const embeddingUrl = process.env.EMBEDDING_SERVICE_URL || "http://localhost:8000";
+    const formData = new FormData();
+    formData.append("file_id", data.id);
+    formData.append("file", file);
+
+    axios.post(`${embeddingUrl}/`, formData)
+      .catch((err) => {
+        console.error("Background chunking + embedding request failed:", err);
+      });
 
     uploadedPaths.push({
       id: data.id,

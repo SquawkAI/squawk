@@ -4,7 +4,7 @@ import React, { useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { CloudArrowUp } from "@phosphor-icons/react";
 
-type UploadedFile = { id: string; name: string;[key: string]: unknown };
+type UploadedFile = { name: string;[key: string]: unknown };
 
 interface FileUploadProps {
   onUploadSuccess?: (file: UploadedFile) => void;

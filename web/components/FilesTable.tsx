@@ -8,6 +8,7 @@ import {
   Trash,
   FolderSimple,
 } from "@phosphor-icons/react";
+import { supabase } from "@/lib/supabase";
 
 interface FileItem {
   id: string;
@@ -59,6 +60,44 @@ function useFiles(projectId: string | null, refreshTrigger?: number) {
     if (url && refreshTrigger !== undefined) mutate();
   }, [url, refreshTrigger, mutate]);
 
+  // Subscribe to status updates
+  // Update the status of a file when its done processing
+  useEffect(() => {
+    if (!projectId) return;
+
+    const channel = supabase
+      .channel("files-status")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "files",
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          const updatedFile = payload.new;
+
+          // update the cache manually
+          mutate((currentData) => {
+            if (!currentData) return currentData;
+
+            return {
+              ...currentData,
+              files: currentData.files.map((file) =>
+                file.id === updatedFile.id ? { ...file, ...updatedFile } : file
+              ),
+            };
+          }, false); // `false` to avoid revalidation
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId, mutate]);
+
   return {
     loading: isInitialLoading,
     error: error as Error | null,
@@ -66,7 +105,6 @@ function useFiles(projectId: string | null, refreshTrigger?: number) {
     refresh: mutate,
     mutateFiles: mutate,
   };
-
 }
 
 // helper to humanize bytes
