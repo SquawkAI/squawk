@@ -167,6 +167,41 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
 
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
 
+  const handleRetry = useCallback(
+    async (fileId: string) => {
+      setDeletingFile(fileId);
+
+      try {
+        await mutateFiles(
+          // Perform the server mutation mutate
+          async (current) => {
+            const res = await fetch(`/api/files/${fileId}/retry`, {
+              method: "POST",
+              credentials: "include",
+            });
+            const payload = await res.json();
+            if (!res.ok) throw new Error(payload.error || "Retry failed");
+
+            // Return the new cache value (same as optimisticData)
+            return {
+              files: (current?.files ?? []).filter((f) => f.id !== fileId),
+            };
+          },
+          
+        );
+
+        // Optional: verify with a silent background revalidate later
+        // void refresh();
+      } catch (err: unknown) {
+        setError(err as Error);
+        setTimeout(() => setError(null), 5000);
+      } finally {
+        setDeletingFile(null);
+      }
+    },
+    [mutateFiles]
+  )
+
   const handleDelete = useCallback(
     async (fileId: string, fileName: string) => {
       if (!confirm(`Delete "${fileName}"? This cannot be undone.`)) return;
@@ -301,25 +336,27 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end items-center gap-x-3">
-                    {file.status === 'failed' && (
+                    {file.status === 'failed' && deletingFile !== file.id && (
                       <button
-                        onClick={() => handleDelete(file.id, file.name)}
+                        onClick={() => handleRetry(file.id)}
                         disabled={deletingFile === file.id}
                         className="text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        title={`Delete ${file.name}`}
+                        title={`Retry ${file.name}`}
                       >
                         <ArrowCounterClockwise size={20} />
                       </button>
                     )}
 
-                    <button
-                      onClick={() => handleDelete(file.id, file.name)}
-                      disabled={deletingFile === file.id}
-                      className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      title={`Delete ${file.name}`}
-                    >
-                      <Trash size={20} />
-                    </button>
+                    {file.status !== 'processing' && (
+                      <button
+                        onClick={() => handleDelete(file.id, file.name)}
+                        disabled={deletingFile === file.id}
+                        className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title={`Delete ${file.name}`}
+                      >
+                        <Trash size={20} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
