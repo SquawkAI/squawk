@@ -43,7 +43,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
         formData.append("folderId", folderId);
       }
 
-      const res = await fetch("/api/upload", {
+      const res = await fetch("/api/files", {
         method: "POST",
         body: formData,
         credentials: "include"

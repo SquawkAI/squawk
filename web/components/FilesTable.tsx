@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import {
   FileText,
   Trash,
-  FolderSimple,
+  ArrowCounterClockwise,
 } from "@phosphor-icons/react";
 import { supabase } from "@/lib/supabase";
 
@@ -295,12 +295,23 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                       Failed
                     </span>
                   )}
-               </td>
+                </td>
                 <td className="px-4 py-3 text-sm text-gray-500">
                   {formatFileSize(file.size)}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex justify-end items-center">
+                  <div className="flex justify-end items-center gap-x-3">
+                    {file.status === 'failed' && (
+                      <button
+                        onClick={() => handleDelete(file.id, file.name)}
+                        disabled={deletingFile === file.id}
+                        className="text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title={`Delete ${file.name}`}
+                      >
+                        <ArrowCounterClockwise size={20} />
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleDelete(file.id, file.name)}
                       disabled={deletingFile === file.id}
