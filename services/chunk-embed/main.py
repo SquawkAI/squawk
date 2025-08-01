@@ -1,4 +1,5 @@
 import os
+import tempfile
 from dotenv import load_dotenv
 
 import uuid
@@ -40,7 +41,7 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
         raise HTTPException(
             status_code=400, detail=f"Unsupported file type: {ext}")
 
-    temp_path = f"/tmp/{uuid.uuid4()}_{file.filename}"
+    temp_path = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}_{file.filename}")
     with open(temp_path, "wb") as f:
         f.write(await file.read())
 
