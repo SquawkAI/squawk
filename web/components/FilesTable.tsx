@@ -9,19 +9,15 @@ import {
   ArrowCounterClockwise,
 } from "@phosphor-icons/react";
 import { supabase } from "@/lib/supabase";
+import { IFileItem } from "@/app/dashboard/page";
 
-interface FileItem {
-  id: string;
-  name: string;
-  size?: number;
-  mime_type?: string;
-  created_at: string;
-  status: "processing" | "completed" | "failed"
-}
 interface FilesTableProps {
   refreshTrigger?: number;
   projectId: string;
   searchTerm?: string;
+
+  selectedDoc: IFileItem | null
+  setSelectedDoc: React.Dispatch<React.SetStateAction<IFileItem | null>>
 }
 
 // fetcher that throws on HTTP error
@@ -43,7 +39,7 @@ function useFiles(projectId: string | null, refreshTrigger?: number) {
     return `/api/files?${params.toString()}`;
   }, [isAuth, projectId]);
 
-  const { data, error, mutate } = useSWR<{ files: FileItem[] }>(
+  const { data, error, mutate } = useSWR<{ files: IFileItem[] }>(
     url,
     fetcher,
     {
@@ -152,7 +148,7 @@ const EmptyState = ({ isSearching }: { isSearching?: boolean }) => (
   </div>
 );
 
-export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectId, searchTerm = "" }) => {
+export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectId, searchTerm = "", selectedDoc, setSelectedDoc }) => {
   const { loading, error: swrError, files, refresh, mutateFiles } = useFiles(projectId, refreshTrigger);
   const [error, setError] = useState<Error | null>(null);
 
@@ -187,7 +183,7 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
               files: (current?.files ?? []).filter((f) => f.id !== fileId),
             };
           },
-          
+
         );
 
         // Optional: verify with a silent background revalidate later
@@ -236,6 +232,8 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
         );
 
 
+        setSelectedDoc(null);
+
         // Optional: verify with a silent background revalidate later
         // void refresh();
       } catch (err: unknown) {
@@ -277,8 +275,9 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
             {filteredFiles.map((file) => (
               <tr
                 key={file.id}
-                className={`hover:bg-gray-50 ${deletingFile === file.id ? "opacity-50" : ""
-                  }`}
+                className={`hover:bg-gray-50 cursor-pointer ${selectedDoc?.id === file.id ? "bg-blue-50 ring-1 ring-blue-200" : ""
+                  } ${deletingFile === file.id ? "opacity-50" : ""}`}
+                onClick={() => setSelectedDoc(file)}
               >
 
                 <td className="px-4 py-3 flex items-center gap-2">
