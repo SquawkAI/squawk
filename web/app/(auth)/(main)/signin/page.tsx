@@ -28,7 +28,7 @@ export default function SignIn() {
     });
 
     const handleGoogleSignIn = () => {
-        signIn("google", { callbackUrl: "/dashboard" })
+        signIn("google", { callbackUrl: "/projects" })
     }
     
     function onSubmit(values: z.infer<typeof signInFormSchema>) {

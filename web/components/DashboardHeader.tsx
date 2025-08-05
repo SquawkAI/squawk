@@ -10,7 +10,7 @@ import useSWR from "swr";
 
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { IProject } from "@/app/(main)/layout";
+import { IProject } from "@/app/projects/layout";
 
 interface DashboardHeaderProps {
     project?: IProject
@@ -73,7 +73,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ project }) => {
 
     return (
         <header className="flex items-center justify-between gap-4 mb-12 flex-shrink-0">
-            {pathname === '/dashboard' && project ? (
+            { /* Match routes /projects/[id] but not /projects */ }
+            {pathname?.match(/^\/projects\/[^/]+$/) && project ? (
                 <form
                     className="group relative flex items-center gap-2 cursor-pointer"
                     onClick={() => setIsEditing(true)}
