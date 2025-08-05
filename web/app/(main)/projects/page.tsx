@@ -2,42 +2,38 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import useSWR from "swr";
+
 import { Folder, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
 
-interface Project {
+interface IProject {
     id: string;
     title: string;
     description: string;
     updated_at: string;
 }
 
-const SAMPLE_PROJECTS: Project[] = [
-    {
-        id: '1',
-        title: 'ECEN 314 Virtual TA',
-        description: 'A virtual teaching assistant for ECEN 314 (Signals & Systems)',
-        updated_at: '2025-07-27 04:18:10.331151+00',
-    },
-    { id: '2', title: 'ECEN 314 Virtual TA', description: 'A virtual teaching assistant for ECEN 314 (Signals & Systems)', updated_at: '2025-07-26 04:18:10.331151+00', },
-    { id: '3', title: 'ECEN 314 Virtual TA', description: 'A virtual teaching assistant for ECEN 314 (Signals & Systems)', updated_at: '2025-07-25 04:18:10.331151+00', },
-    { id: '4', title: 'ECEN 314 Virtual TA', description: 'A virtual teaching assistant for ECEN 314 (Signals & Systems)', updated_at: '2025-07-24 04:18:10.331151+00', },
-];
-
 const ProjectsPage: React.FC = () => {
     const [query, setQuery] = useState('');
 
+    const { data, error, isLoading, mutate } = useSWR('/api/projects', async () => {
+        const res = await axios.get("/api/projects");
+        return res.data;
+    });
+
     const filteredProjects = useMemo(() => {
+        const allProjects: IProject[] = data?.projects || [];
+
         const q = query.trim().toLowerCase();
         return q
-            ? SAMPLE_PROJECTS.filter(p => p.title.toLowerCase().includes(q))
-            : SAMPLE_PROJECTS;
-    }, [query, SAMPLE_PROJECTS]);
+            ? allProjects.filter(p => p.title.toLowerCase().includes(q))
+            : allProjects;
+    }, [query, data]);
 
-    // Fake "recent" based on update time (just use top 3)
     const recent = filteredProjects.slice(0, 3);
 
-    // Format updated time
     const getLastOpened = (updatedAt: string) => {
         const updatedDate = new Date(updatedAt);
         const now = new Date();
@@ -49,8 +45,17 @@ const ProjectsPage: React.FC = () => {
         return `${diffHrs} hours ago`;
     };
 
+    if (error) {
+        return <div className="text-center text-red-500">Failed to load projects.</div>;
+    }
+
+    if (isLoading) {
+        return <div className="text-center text-gray-500">Loading projects...</div>;
+    }
+
     return (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+            {/* Search bar */}
             <div className="flex justify-center">
                 <input
                     type="search"
@@ -61,9 +66,9 @@ const ProjectsPage: React.FC = () => {
                 />
             </div>
 
+            {/* Recent Projects */}
             <section>
                 <h2 className="text-lg font-semibold mb-4">Recent</h2>
-
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {recent.map(p => (
                         <div
@@ -71,11 +76,7 @@ const ProjectsPage: React.FC = () => {
                             className="group block rounded-lg border border-gray-200 p-5 hover:shadow-md transition"
                         >
                             <div className="flex items-start gap-4">
-                                <Folder
-                                    className="h-10 w-10 shrink-0 text-yellow-500"
-                                    strokeWidth={1.5}
-                                    fill="currentColor"
-                                />
+                                <Folder className="h-10 w-10 shrink-0 text-yellow-500" strokeWidth={1.5} fill="currentColor" />
                                 <div className="flex flex-col gap-1">
                                     <h3 className="font-semibold">{p.title}</h3>
                                     <p className="text-xs text-gray-500 line-clamp-2">
@@ -83,7 +84,6 @@ const ProjectsPage: React.FC = () => {
                                     </p>
                                 </div>
                             </div>
-
                             <div className="mt-4 flex items-center gap-1 text-xs text-gray-500">
                                 <Clock className="h-3 w-3" />
                                 <span>Last opened {getLastOpened(p.updated_at)}</span>
@@ -93,9 +93,9 @@ const ProjectsPage: React.FC = () => {
                 </div>
             </section>
 
+            {/* All Projects */}
             <section>
                 <h2 className="text-lg font-semibold mb-4">All Projects</h2>
-
                 <div className="space-y-4">
                     {filteredProjects.map(p => (
                         <div
