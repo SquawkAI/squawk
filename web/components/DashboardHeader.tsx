@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -115,7 +116,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ project }) => {
             )}
 
             <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-10">
-                <span className="text-base font-medium">My Projects</span>
+                <Link className="text-base font-medium" href="/projects">My projects</Link>
                 <Button>+ New Project</Button>
             </div>
         </header>
