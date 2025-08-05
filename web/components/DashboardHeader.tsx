@@ -8,7 +8,7 @@ import useSWR from "swr";
 
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { IProject } from "@/app/dashboard/layout";
+import { IProject } from "@/app/(main)/layout";
 
 interface DashboardHeaderProps {
     project: IProject
