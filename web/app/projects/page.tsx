@@ -4,16 +4,10 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import useSWR from "swr";
 
+import { IProject } from './layout';
 import { Folder, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
-
-interface IProject {
-    id: string;
-    title: string;
-    description: string;
-    updated_at: string;
-}
 
 const ProjectsPage: React.FC = () => {
     const [query, setQuery] = useState('');

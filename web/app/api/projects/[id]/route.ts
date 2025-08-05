@@ -26,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
         if (fetchError || !projectRecord) {
             console.log(fetchError);
-            
+
             return NextResponse.json({ error: "Project not found" }, { status: 404 });
         }
 
@@ -43,6 +43,33 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json({ success: true });
     } catch (err) {
         console.error("PUT /projects/:id error:", err);
+        return NextResponse.json({ error: "Server error" }, { status: 500 });
+    }
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { id: projectId } = await params;
+
+        const { data: project, error } = await supabase
+            .from("project")
+            .select("*")
+            .eq("id", projectId)
+            .eq("owner_id", session.user.id)
+            .single();
+
+        if (error || !project) {
+            return NextResponse.json({ error: "Project not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({ ...project });
+    } catch (err) {
+        console.error("GET /projects/:id error:", err);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 }

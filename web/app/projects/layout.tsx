@@ -8,7 +8,9 @@ import { AppSidebar } from "@/components/Sidebar";
 
 export interface IProject {
     id: string;
-    name: string
+    title: string;
+    description: string;
+    updated_at: string;
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {

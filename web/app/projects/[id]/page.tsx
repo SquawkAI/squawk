@@ -1,7 +1,8 @@
 "use client";
 
 import React, { ReactNode, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import Link from "next/link"
+import axios from "axios";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,13 +11,13 @@ import { useParams } from 'next/navigation';
 
 import { supabaseClient } from "@/lib/supabase";
 
+import { IProject } from "../layout";
+
 import { FolderSimple, WarningCircle, Spinner, PencilSimpleIcon } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { FileUpload } from "@/components/FileUpload";
 import { FilesTable } from "@/components/FilesTable";
 import { Button } from "@/components/ui/button";
-
-import { IProject } from "../layout";
 
 export interface IFileItem {
     id: string;
@@ -50,28 +51,37 @@ const DashboardPage: React.FC = () => {
 
     const [selectedDoc, setSelectedDoc] = React.useState<null | IFileItem>(null);
 
-    const { register, handleSubmit, watch, formState: { errors } } = useForm<z.infer<typeof nameFormSchema>>({
+    const { data: project, mutate: mutateProject } = useSWR<IProject>(`/api/projects/${projectId}`, async () => {
+        const res = await axios.get(`/api/projects/${projectId}`);
+        return res.data;
+    });
+
+    const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<z.infer<typeof nameFormSchema>>({
         resolver: zodResolver(nameFormSchema),
         defaultValues: {
-            title: 'project?.name',
+            title: project?.title,
         },
     });
     const title = watch("title");
-
-    const { data: projectData, mutate: mutateProject } = useSWR(`/api/projects/${projectId}`, null);
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus();
         }
     }, [isEditing]);
+    
+    useEffect(() => {
+        if (project) {
+            reset({ title: project.title });
+        }
+    }, [project, reset]);
 
     const onSubmit = (data: z.infer<typeof nameFormSchema>) => {
         setIsEditing(false);
 
         mutateProject(
-            async (currentData: IProject) => {
-                const res = await fetch(`/api/projects/${projectId}`, {
+            async (currentData: IProject | undefined) => {
+                const res = await fetch(`/api/projects/${project?.id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ title: data.title }),
@@ -82,12 +92,17 @@ const DashboardPage: React.FC = () => {
                 }
 
                 return {
-                    ...currentData,
+                    ...(currentData || {}), // fallback to empty object
                     title: data.title,
-                };
+                } as IProject;
             },
             {
-                optimisticData: { ...(projectData || {}), title: data.title },
+                optimisticData: {
+                    id: project?.id ?? projectId?.toString() ?? '',
+                    title: data.title,
+                    description: project?.description ?? '',
+                    updated_at: new Date().toISOString(),
+                },
                 rollbackOnError: true,
                 revalidate: false,
                 populateCache: true,
@@ -107,7 +122,7 @@ const DashboardPage: React.FC = () => {
                 .storage
                 .from("user-uploads")
                 .createSignedUrl(
-                    `${projectId}/${selectedDoc?.name}`,
+                    `${project?.id}/${selectedDoc?.name}`,
                     3600
                 );
 
@@ -180,13 +195,13 @@ const DashboardPage: React.FC = () => {
                     </div>
 
                     {/* Upload area */}
-                    {projectId && (<FileUpload onUploadSuccess={handleUploadSuccess} projectId={projectId?.toString()} />)}
+                    {project?.id && (<FileUpload onUploadSuccess={handleUploadSuccess} projectId={project.id} />)}
 
                     {/* Sources table */}
-                    {projectId && (
+                    {project?.id && (
                         <FilesTable
                             refreshTrigger={refreshTrigger}
-                            projectId={projectId?.toString()}
+                            projectId={project?.id}
                             searchTerm={searchTerm}
 
                             selectedDoc={selectedDoc}
