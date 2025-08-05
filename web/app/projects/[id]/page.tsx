@@ -1,6 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
+import { useParams } from 'next/navigation';
 import { Input } from "@/components/ui/input";
 import { FolderSimple, WarningCircle, Spinner } from "@phosphor-icons/react";
 import { FileUpload } from "@/components/FileUpload";
@@ -25,6 +26,8 @@ const PreviewPlaceholder = ({ icon, title, message }: { icon: ReactNode, title: 
 );
 
 const DashboardPage: React.FC = () => {
+    const { id: projectId } = useParams();
+
     const [refreshTrigger, setRefreshTrigger] = React.useState(0);
     const [searchTerm, setSearchTerm] = React.useState("");
 
@@ -42,7 +45,7 @@ const DashboardPage: React.FC = () => {
                 .storage
                 .from("user-uploads")
                 .createSignedUrl(
-                    `7c70ac69-7673-4be6-9efb-ba04c399e9a3/${selectedDoc?.name}`,
+                    `${projectId}/${selectedDoc?.name}`,
                     3600
                 );
 
@@ -69,17 +72,19 @@ const DashboardPage: React.FC = () => {
                 </div>
 
                 {/* Upload area */}
-                <FileUpload onUploadSuccess={handleUploadSuccess} />
+                {projectId && (<FileUpload onUploadSuccess={handleUploadSuccess} projectId={projectId?.toString()} />)}
 
                 {/* Sources table */}
-                <FilesTable
-                    refreshTrigger={refreshTrigger}
-                    projectId="7c70ac69-7673-4be6-9efb-ba04c399e9a3"
-                    searchTerm={searchTerm}
+                {projectId && (
+                    <FilesTable
+                        refreshTrigger={refreshTrigger}
+                        projectId={projectId?.toString()}
+                        searchTerm={searchTerm}
 
-                    selectedDoc={selectedDoc}
-                    setSelectedDoc={setSelectedDoc}
-                />
+                        selectedDoc={selectedDoc}
+                        setSelectedDoc={setSelectedDoc}
+                    />
+                )}
             </div>
 
             {/* Right half */}

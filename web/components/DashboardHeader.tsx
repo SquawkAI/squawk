@@ -13,14 +13,14 @@ import { Button } from "@/components/ui/button";
 import { IProject } from "@/app/projects/layout";
 
 interface DashboardHeaderProps {
-    project?: IProject
+    selectedProject?: IProject
 }
 
 const nameFormSchema = z.object({
     title: z.string().min(1, "Project title cannot be empty").max(20, "Project title must be less than 20 characters")
 });
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ project }) => {
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ selectedProject: project }) => {
     const pathname = usePathname();
     
     const [isEditing, setIsEditing] = useState(false);

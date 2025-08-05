@@ -47,6 +47,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing projectId or files" }, { status: 400 });
   }
 
+  const { data: project, error: projectError } = await supabase
+    .from("project")
+    .select("id")
+    .eq("id", projectId)
+    .eq("owner_id", session.user.id)
+    .single();
+
+  if (projectError || !project) {
+    return NextResponse.json({ error: "Project not found or unauthorized" }, { status: 404 });
+  }
+
   const uploadedPaths = [];
 
   for (const file of files) {
