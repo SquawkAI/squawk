@@ -6,8 +6,6 @@ import AuthSessionProvider from "@/components/AuthSessionProvider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Sidebar";
 
-import DashboardHeader from "@/components/DashboardHeader";
-
 export interface IProject {
     id: string;
     name: string
@@ -19,11 +17,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         redirect("/signin");
     }
 
-    const selectedProject = {
-        id: '7c70ac69-7673-4be6-9efb-ba04c399e9a3',
-        name: 'My new project'
-    }
-
     return (
         <SidebarProvider>
             <AppSidebar />
@@ -32,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                     <SidebarTrigger />
                 </div>
 
-                <DashboardHeader selectedProject={selectedProject} />
+                {/* <DashboardHeader selectedProject={selectedProject} /> */}
 
                 <AuthSessionProvider>
                     <div className="flex-1 overflow-hidden">{children}</div>
