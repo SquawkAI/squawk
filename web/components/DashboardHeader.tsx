@@ -34,7 +34,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ project }) => {
     });
     const title = watch("title");
 
-    const { data: projectData, mutate: mutateProject } = useSWR(`/api/project/${project?.id}`, null);
+    const { data: projectData, mutate: mutateProject } = useSWR(`/api/projects/${project?.id}`, null);
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -47,7 +47,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ project }) => {
 
         mutateProject(
             async (currentData: IProject) => {
-                const res = await fetch(`/api/project/${project?.id}`, {
+                const res = await fetch(`/api/projects/${project?.id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ title: data.title }),

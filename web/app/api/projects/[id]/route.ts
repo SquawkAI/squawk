@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
         return NextResponse.json({ success: true });
     } catch (err) {
-        console.error("PUT /project/:id error:", err);
+        console.error("PUT /projects/:id error:", err);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 }
