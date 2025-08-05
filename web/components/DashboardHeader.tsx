@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { IProject } from "@/app/(main)/layout";
 
 interface DashboardHeaderProps {
-    project: IProject
+    project?: IProject
 }
 
 const nameFormSchema = z.object({
@@ -19,18 +20,20 @@ const nameFormSchema = z.object({
 });
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ project }) => {
+    const pathname = usePathname();
+    
     const [isEditing, setIsEditing] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { register, handleSubmit, watch, formState: { errors } } = useForm<z.infer<typeof nameFormSchema>>({
         resolver: zodResolver(nameFormSchema),
         defaultValues: {
-            title: project.name,
+            title: project?.name,
         },
     });
     const title = watch("title");
 
-    const { data: projectData, mutate: mutateProject } = useSWR(`/api/project/${project.id}`, null);
+    const { data: projectData, mutate: mutateProject } = useSWR(`/api/project/${project?.id}`, null);
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -43,7 +46,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ project }) => {
 
         mutateProject(
             async (currentData: IProject) => {
-                const res = await fetch(`/api/project/${project.id}`, {
+                const res = await fetch(`/api/project/${project?.id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ title: data.title }),
@@ -69,43 +72,47 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ project }) => {
 
     return (
         <header className="flex items-center justify-between gap-4 mb-12 flex-shrink-0">
-            <form
-                className="group relative flex items-center gap-2 cursor-pointer"
-                onClick={() => setIsEditing(true)}
-                onSubmit={handleSubmit(onSubmit)}
-            >
-                {isEditing ? (
-                    <div>
-                        <input
-                            {...register("title")}
-                            ref={(e) => {
-                                register("title").ref(e);
-                                inputRef.current = e;
-                            }}
-                            onBlur={handleSubmit(onSubmit)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    handleSubmit(onSubmit)();
-                                }
-                            }}
-                            className={`text-2xl sm:text-3xl lg:text-4xl font-bold bg-transparent border-0 border-b transition-colors w-fit focus:outline-none ${errors.title ? "border-red-400" : "border-gray-300 focus:border-gray-400"
-                                }`}
-                        />
-                        {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
-                    </div>
-                ) : (
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold relative after:absolute after:left-0 after:-bottom-1 after:w-full after:h-[1px] after:bg-gray-300 after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform after:origin-left">
-                                {title}
-                            </h1>
-                            <PencilSimpleIcon className="w-5 h-5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            {pathname === '/dashboard' && project ? (
+                <form
+                    className="group relative flex items-center gap-2 cursor-pointer"
+                    onClick={() => setIsEditing(true)}
+                    onSubmit={handleSubmit(onSubmit)}
+                >
+                    {isEditing ? (
+                        <div>
+                            <input
+                                {...register("title")}
+                                ref={(e) => {
+                                    register("title").ref(e);
+                                    inputRef.current = e;
+                                }}
+                                onBlur={handleSubmit(onSubmit)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        handleSubmit(onSubmit)();
+                                    }
+                                }}
+                                className={`text-2xl sm:text-3xl lg:text-4xl font-bold bg-transparent border-0 border-b transition-colors w-fit focus:outline-none ${errors.title ? "border-red-400" : "border-gray-300 focus:border-gray-400"
+                                    }`}
+                            />
+                            {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
                         </div>
-                        {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
-                    </div>
-                )}
-            </form>
+                    ) : (
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold relative after:absolute after:left-0 after:-bottom-1 after:w-full after:h-[1px] after:bg-gray-300 after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform after:origin-left">
+                                    {title}
+                                </h1>
+                                <PencilSimpleIcon className="w-5 h-5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
+                        </div>
+                    )}
+                </form>
+            ) : (
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold">Projects</p>
+            )}
 
             <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-10">
                 <span className="text-base font-medium">My Projects</span>
