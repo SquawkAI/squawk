@@ -15,14 +15,16 @@ export function AppSidebar() {
             {/* Logo */}
             <SidebarHeader>
                 <div className="flex justify-center py-6">
-                    <Image
-                        src="/squawk-logo-small.png"
-                        alt="SquawkAI Logo"
-                        priority
-                        width={64}
-                        height={64}
-                        className="w-18 h-auto"
-                    />
+                    <Link href="/">
+                        <Image
+                            src="/squawk-logo-small.png"
+                            alt="SquawkAI Logo"
+                            priority
+                            width={64}
+                            height={64}
+                            className="w-18 h-auto"
+                        />
+                    </Link>
                 </div>
             </SidebarHeader>
 
