@@ -1,5 +1,8 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
     Sidebar,
     SidebarContent,
@@ -10,6 +13,22 @@ import {
 import { BookOpenText, FileText, ShareNetwork, User } from "@phosphor-icons/react/dist/ssr";
 
 export function AppSidebar() {
+    const pathname = usePathname();
+
+    const isActive = (path: string) => {
+        if (path === "/dashboard") {
+            return pathname === "/dashboard" || pathname === "/dashboard/";
+        }
+        return pathname === path;
+    };
+
+    const linkStyle = (path: string) => `
+        inline-flex flex-col items-center gap-1
+        px-3 py-2
+        ${isActive(path) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100"}
+        rounded-xl
+    `;
+
     return (
         <Sidebar>
             {/* Logo */}
@@ -31,49 +50,37 @@ export function AppSidebar() {
             {/* Menu */}
             <SidebarContent>
                 <SidebarGroup>
-                    {/* Selected: Sources */}
                     <div className="mt-4 flex flex-col space-y-6">
                         <Link
-                            href="/sources"
-                            className="
-                                inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                bg-blue-50 text-blue-600
-                                rounded-xl
-                                "
+                            href="/dashboard"
+                            className={linkStyle("/dashboard")}
                         >
                             <BookOpenText size={36} weight="regular" />
-                            <span className="text-sm font-semibold leading-none">
+                            <span className={`text-sm leading-none ${isActive("/dashboard") ? "font-semibold" : ""}`}>
                                 Sources
                             </span>
                         </Link>
 
                         {/* Tone */}
                         <Link
-                            href="/tone"
-                            className="
-                                inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                text-gray-600 hover:bg-gray-100
-                                rounded-xl
-                            "
+                            href="/dashboard/tone"
+                            className={linkStyle("/dashboard/tone")}
                         >
                             <FileText size={36} weight="regular" />
-                            <span className="text-sm leading-none">Tone</span>
+                            <span className={`text-sm leading-none ${isActive("/dashboard/tone") ? "font-semibold" : ""}`}>
+                                Tone
+                            </span>
                         </Link>
 
                         {/* Share */}
                         <Link
-                            href="/share"
-                            className="
-                                inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                text-gray-600 hover:bg-gray-100
-                                rounded-xl
-                            "
+                            href="/dashboard/share"
+                            className={linkStyle("/dashboard/share")}
                         >
                             <ShareNetwork size={36} weight="regular" />
-                            <span className="text-sm leading-none">Share</span>
+                            <span className={`text-sm leading-none ${isActive("/dashboard/share") ? "font-semibold" : ""}`}>
+                                Share
+                            </span>
                         </Link>
                     </div>
                 </SidebarGroup>
@@ -83,16 +90,13 @@ export function AppSidebar() {
             <SidebarFooter>
                 <div className="mt-4 flex flex-col space-y-6">
                     <Link
-                        href="/profile"
-                        className="
-                            inline-flex flex-col items-center gap-1
-                            px-3 py-2
-                            text-gray-600 hover:bg-gray-100
-                            rounded-xl
-                        "
+                        href="/dashboard/profile"
+                        className={linkStyle("/dashboard/profile")}
                     >
                         <User size={36} weight="regular" />
-                        <span className="text-sm leading-none">Profile</span>
+                        <span className={`text-sm leading-none ${isActive("/dashboard/profile") ? "font-semibold" : ""}`}>
+                            Profile
+                        </span>
                     </Link>
                 </div>
             </SidebarFooter>
