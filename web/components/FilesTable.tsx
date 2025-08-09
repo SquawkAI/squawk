@@ -9,7 +9,7 @@ import {
   ArrowCounterClockwise,
 } from "@phosphor-icons/react";
 import { supabase } from "@/lib/supabase";
-import { IFileItem } from "@/app/dashboard/page";
+import { IFileItem } from "@/app/projects/[id]/page";
 
 interface FilesTableProps {
   refreshTrigger?: number;

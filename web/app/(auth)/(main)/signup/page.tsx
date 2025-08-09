@@ -32,7 +32,7 @@ export default function SignIn() {
     }
 
     const handleGoogleSignIn = () => {
-        signIn("google", { callbackUrl: "/dashboard" })
+        signIn("google", { callbackUrl: "/projects" })
     }
 
     return (

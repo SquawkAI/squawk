@@ -9,10 +9,11 @@ type UploadedFile = { name: string;[key: string]: unknown };
 interface FileUploadProps {
   onUploadSuccess?: (file: UploadedFile) => void;
   folderId?: string | null;
+  projectId: string
 }
 
 // TODO: Use React Query or SWR to provide optimistic updates and not refresh when the file is uploaded
-export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderId = null }) => {
+export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderId = null, projectId }) => {
   const { data: session, status } = useSession();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +38,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
     try {
       const formData = new FormData();
 
-      formData.append('projectId', '7c70ac69-7673-4be6-9efb-ba04c399e9a3');
+      formData.append('projectId', projectId);
       formData.append("file", file);
       if (folderId) {
         formData.append("folderId", folderId);
