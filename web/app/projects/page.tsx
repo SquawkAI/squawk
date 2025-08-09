@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import useSWR from "swr";
 
@@ -11,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import axios from 'axios';
 
 const ProjectsPage: React.FC = () => {
+    const router = useRouter();
+    
     const [query, setQuery] = useState('');
 
     const { data, error, isLoading, mutate } = useSWR('/api/projects', async () => {
@@ -49,7 +52,11 @@ const ProjectsPage: React.FC = () => {
         await mutate((current?: { projects: IProject[] } | null) => {
             const list = current?.projects ?? []
             return { ...(current ?? { projects: [] }), projects: [created, ...list] }
-        }, { revalidate: false, populateCache: true })
+        }, { revalidate: false, populateCache: true });
+
+        if(created) {
+            router.push(`/projects/${created.id}`);
+        }
     }
 
     async function deleteProject(projectId: string) {
