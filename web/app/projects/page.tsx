@@ -118,72 +118,80 @@ const ProjectsPage: React.FC = () => {
                 {/* Recent Projects */}
                 <section>
                     <h2 className="text-lg font-semibold mb-4">Recent</h2>
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {recent.map(p => (
-                            <Link
-                                key={p.id}
-                                href={`/projects/${p.id}`}
-                                className="group block rounded-lg border border-gray-200 p-5 hover:shadow-md transition"
-                            >
-                                <div className="flex items-start gap-4">
-                                    <Folder
-                                        className="h-10 w-10 shrink-0 text-yellow-500"
-                                        strokeWidth={1.5}
-                                        fill="currentColor"
-                                    />
-                                    <div className="flex flex-col gap-1">
-                                        <h3 className="font-semibold">{p.title}</h3>
-                                        <p className="text-xs text-gray-500 line-clamp-2">
-                                            {p.description || "No description provided."}
-                                        </p>
+                    {recent.length === 0 ? (
+                        <p className="text-gray-500 text-sm italic">
+                            No recent projects yet. Create one to get started!
+                        </p>
+                    ) : (
+                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {recent.map(p => (
+                                <Link
+                                    key={p.id}
+                                    href={`/projects/${p.id}`}
+                                    className="group block rounded-lg border border-gray-200 p-5 hover:shadow-md transition"
+                                >
+                                    <div className="flex items-start gap-4">
+                                        <Folder
+                                            className="h-10 w-10 shrink-0 text-yellow-500"
+                                            strokeWidth={1.5}
+                                            fill="currentColor"
+                                        />
+                                        <div className="flex flex-col gap-1">
+                                            <h3 className="font-semibold">{p.title}</h3>
+                                            <p className="text-xs text-gray-500 line-clamp-2">
+                                                {p.description || "No description provided."}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="mt-4 flex items-center gap-1 text-xs text-gray-500">
-                                    <Clock className="h-3 w-3" />
-                                    <span>Last opened {getLastOpened(p.updated_at)}</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                                    <div className="mt-4 flex items-center gap-1 text-xs text-gray-500">
+                                        <Clock className="h-3 w-3" />
+                                        <span>Last opened {getLastOpened(p.updated_at)}</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </section>
 
                 {/* All Projects */}
                 <section>
                     <h2 className="text-lg font-semibold mb-4">All Projects</h2>
-                    <div className="space-y-4">
-                        {filteredProjects.map(p => (
-                            <div
-                                key={p.id}
-                                className="flex items-center justify-between rounded-lg border border-gray-200 px-5 py-3 hover:shadow-sm transition"
-                            >
-                                <div className="flex items-center gap-4">
+
+                    {filteredProjects.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
+                            <p className="mb-4 italic">Nothing here yet… let’s fix that! Create your first project below.</p>
+                            
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {filteredProjects.map((p) => (
+                                <div
+                                    key={p.id}
+                                    className="flex items-center justify-between rounded-lg border border-gray-200 px-5 py-3 hover:shadow-sm transition"
+                                >
                                     <div>
                                         <h3 className="font-medium">{p.title}</h3>
                                         <p className="text-xs text-gray-500">
-                                            {p.description || 'No description provided.'}
+                                            {p.description || "No description provided."}
                                         </p>
                                     </div>
-                                </div>
 
-                                <div className="flex items-center gap-3">
-                                    <Button
-                                        asChild
-                                        className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-1.5 rounded-md text-sm transition-colors"
-                                    >
-                                        <Link href={`/projects/${p.id}`}>View</Link>
-                                    </Button>
-
-                                    <Button
-                                        variant="destructive"
-                                        className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors flex items-center gap-1"
-                                        onClick={() => deleteProject(p.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    <div className="flex items-center gap-3">
+                                        <Button asChild>
+                                            <Link href={`/projects/${p.id}`}>View</Link>
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={() => deleteProject(p.id)}
+                                            className="flex items-center gap-1"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </section>
             </div>
         </>
