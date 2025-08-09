@@ -5,6 +5,7 @@ import Link from 'next/link';
 import useSWR from "swr";
 
 import { IProject } from './layout';
+import { NewProjectDialog } from '@/components/NewProjectDialog';
 import { Folder, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
@@ -39,6 +40,19 @@ const ProjectsPage: React.FC = () => {
         return `${diffHrs} hours ago`;
     };
 
+    async function createProject(values: { title: string; description?: string }) {
+        const { data: created } = await axios.post<IProject>("/api/projects", {
+            title: values.title,
+            description: values.description,
+        })
+
+        await mutate((current?: { projects: IProject[] } | null) => {
+            const list = current?.projects ?? []
+            return { ...(current ?? { projects: [] }), projects: [created, ...list] }
+        }, { revalidate: false, populateCache: true })
+    }
+
+
     if (error) {
         return <div className="text-center text-red-500">Failed to load projects.</div>;
     }
@@ -52,10 +66,20 @@ const ProjectsPage: React.FC = () => {
             <header className="flex items-center justify-between gap-4 mb-12 flex-shrink-0">
                 <p className="text-2xl sm:text-3xl lg:text-4xl font-bold">Projects</p>
 
-                <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-10">
-                    <Link className="text-base font-medium" href="/projects">My projects</Link>
-                    <Button>+ New Project</Button>
-                </div>
+                <NewProjectDialog
+                    trigger={
+                        <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-10">
+                            <Link
+                                className="text-base font-medium"
+                                href="/projects"
+                            >
+                                My projects
+                            </Link>
+                            <Button>+ New Project</Button>
+                        </div>
+                    }
+                    onCreate={createProject}
+                />
             </header>
 
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-10">
