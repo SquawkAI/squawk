@@ -13,7 +13,7 @@ import axios from 'axios';
 
 const ProjectsPage: React.FC = () => {
     const router = useRouter();
-    
+
     const [query, setQuery] = useState('');
 
     const { data, error, isLoading, mutate } = useSWR('/api/projects', async () => {
@@ -54,7 +54,7 @@ const ProjectsPage: React.FC = () => {
             return { ...(current ?? { projects: [] }), projects: [created, ...list] }
         }, { revalidate: false, populateCache: true });
 
-        if(created) {
+        if (created) {
             router.push(`/projects/${created.id}`);
         }
     }
@@ -120,16 +120,21 @@ const ProjectsPage: React.FC = () => {
                     <h2 className="text-lg font-semibold mb-4">Recent</h2>
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {recent.map(p => (
-                            <div
+                            <Link
                                 key={p.id}
+                                href={`/projects/${p.id}`}
                                 className="group block rounded-lg border border-gray-200 p-5 hover:shadow-md transition"
                             >
                                 <div className="flex items-start gap-4">
-                                    <Folder className="h-10 w-10 shrink-0 text-yellow-500" strokeWidth={1.5} fill="currentColor" />
+                                    <Folder
+                                        className="h-10 w-10 shrink-0 text-yellow-500"
+                                        strokeWidth={1.5}
+                                        fill="currentColor"
+                                    />
                                     <div className="flex flex-col gap-1">
                                         <h3 className="font-semibold">{p.title}</h3>
                                         <p className="text-xs text-gray-500 line-clamp-2">
-                                            {p.description || 'No description provided.'}
+                                            {p.description || "No description provided."}
                                         </p>
                                     </div>
                                 </div>
@@ -137,7 +142,7 @@ const ProjectsPage: React.FC = () => {
                                     <Clock className="h-3 w-3" />
                                     <span>Last opened {getLastOpened(p.updated_at)}</span>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 </section>
