@@ -52,6 +52,20 @@ const ProjectsPage: React.FC = () => {
         }, { revalidate: false, populateCache: true })
     }
 
+    async function deleteProject(projectId: string) {
+        await axios.delete(`/api/projects/${projectId}`)
+
+        await mutate(
+            (current?: { projects: IProject[] } | null) => {
+                const list = current?.projects ?? []
+                return {
+                    ...(current ?? { projects: [] }),
+                    projects: list.filter(p => p.id !== projectId),
+                }
+            },
+            { revalidate: false, populateCache: true, rollbackOnError: true }
+        )
+    }
 
     if (error) {
         return <div className="text-center text-red-500">Failed to load projects.</div>;
@@ -150,7 +164,7 @@ const ProjectsPage: React.FC = () => {
                                     <Button
                                         variant="destructive"
                                         className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors flex items-center gap-1"
-                                        onClick={() => alert(`Delete ${p.title}`)}
+                                        onClick={() => deleteProject(p.id)}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
