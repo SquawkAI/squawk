@@ -47,6 +47,32 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 }
 
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { id: projectId } = await params;
+
+        const { error: deleteError } = await supabase
+            .from("project")
+            .delete()
+            .eq("id", projectId)
+
+        if (deleteError) {
+            console.log(deleteError);
+            return NextResponse.json({ error: "Failed to delete project" }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (err) {
+        console.error("DELETE /projects/:id error:", err);
+        return NextResponse.json({ error: "Server error" }, { status: 500 });
+    }
+}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const session = await getServerSession(authOptions);
