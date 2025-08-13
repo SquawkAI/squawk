@@ -1,21 +1,43 @@
 import os
-from typing import Any, List
+import json
+import ast
+from typing import Any, List, Optional
 
 import numpy as np
-from dotenv import load_dotenv
+from supabase import Client
 from pydantic import Field
-from supabase import Client, create_client
 
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from langchain_openai import OpenAIEmbeddings 
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_openai import OpenAIEmbeddings
+
+
+def _to_float_list(v: Any) -> List[float]:
+    """Coerce Supabase result (vector/text/json) into List[float]."""
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [float(x) for x in v]
+    if isinstance(v, str):
+        try:
+            parsed = json.loads(v)
+        except json.JSONDecodeError:
+            parsed = ast.literal_eval(v)
+        return [float(x) for x in parsed]
+    # Fallback for unexpected types
+    return [float(x) for x in v]
+
 
 class SupabaseRetriever(BaseRetriever):
+    # Required inputs
     supabase: Client
     project_id: str
     k: int = 5
 
-    embeddings_model: OpenAIEmbeddings = Field(default_factory=OpenAIEmbeddings)
+    # Internals with defaults
+    embeddings_model: OpenAIEmbeddings = Field(
+        default_factory=OpenAIEmbeddings)
     documents: List[Document] = Field(default_factory=list)
     embeddings: List[List[float]] = Field(default_factory=list)
 
@@ -23,9 +45,8 @@ class SupabaseRetriever(BaseRetriever):
     def model_post_init(self, __context: Any) -> None:
         self._load_data()
 
-    # ---- Internal helpers ----
     def _load_data(self) -> None:
-        # 1) files for project (completed only)
+        # 1) files for project (only completed)
         files_res = (
             self.supabase.table("files")
             .select("id")
@@ -47,20 +68,22 @@ class SupabaseRetriever(BaseRetriever):
         chunks = chunks_res.data or []
         if not chunks:
             return
-
         chunk_ids = [c["id"] for c in chunks]
 
-        # 3) embeddings for those chunks
+        # 3) embeddings (prefer pgvector column if present)
         embeds_res = (
             self.supabase.table("embeddings")
             .select("chunk_id, embedding")
             .in_("chunk_id", chunk_ids)
             .execute()
         )
-        embed_map = {row["chunk_id"]: row["embedding"]
-                     for row in (embeds_res.data or [])}
 
-        # 4) build in-memory arrays + Documents
+        embed_map = {
+            row["chunk_id"]: _to_float_list(row["embedding"])
+            for row in (embeds_res.data or [])
+        }
+
+        # 4) build in-memory docs + vectors
         for row in chunks:
             vec = embed_map.get(row["id"])
             if vec:
@@ -73,24 +96,26 @@ class SupabaseRetriever(BaseRetriever):
                 )
                 self.embeddings.append(vec)
 
-    def _get_relevant_documents(self, query: str, *, run_manager: Any = None) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+    ) -> List[Document]:
         if not self.embeddings:
             return []
 
-        # Embed query
         q = np.array(self.embeddings_model.embed_query(query), dtype=float)
+        M = np.array(self.embeddings, dtype=float)  # (N, D)
 
-        # Cosine similarity with preloaded embeddings
-        M = np.array(self.embeddings, dtype=float)  # shape: (N, D)
+        # cosine similarity
         denom = (np.linalg.norm(M, axis=1) * np.linalg.norm(q))
-        # Avoid divide-by-zero
         denom[denom == 0] = 1e-12
         sims = (M @ q) / denom
 
         top_idx = np.argsort(sims)[-self.k:][::-1]
         return [self.documents[i] for i in top_idx]
 
-def build_supabase_retriever(supbabase, project_id):
-    retriever = SupabaseRetriever(supabase=supbabase, project_id=project_id)
 
-    return retriever
+def build_supabase_retriever(supabase: Client, project_id: str) -> SupabaseRetriever:
+    return SupabaseRetriever(supabase=supabase, project_id=project_id)
