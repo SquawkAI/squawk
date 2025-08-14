@@ -11,6 +11,11 @@ def last_n_messages(n: int = 12):
     return RunnableLambda(lambda x: {"history": x["history"][-n:], "question": x["question"]})
 
 
+def log_and_pass(x):
+    print("Rewritten question:", x)
+    return x
+
+
 def build_contextual_rag_with_history(retriever, llm, session_store):
     """
     Conversational RAG:
@@ -24,8 +29,11 @@ def build_contextual_rag_with_history(retriever, llm, session_store):
     contextualize_q = (
         ChatPromptTemplate.from_messages([
             ("system",
-             "Rewrite the latest user question into a standalone query using the chat history. "
-             "Do NOT answer; return only the rewritten question."),
+             "Rewrite the latest user question into a fully self-contained query for retrieval.\n"
+             "- Resolve pronouns like 'he/she/they/this/that' using ONLY the conversation history from THIS session.\n"
+             "- If a specific person, entity, project, or topic has been referenced earlier in this session, include it explicitly.\n"
+             "- If there is no clear antecedent in this session, keep the query generic (do NOT guess).\n"
+             "- Return ONLY the rewritten question."),
             ("placeholder", "{history}"),
             ("human", "{question}"),
         ])
@@ -33,19 +41,16 @@ def build_contextual_rag_with_history(retriever, llm, session_store):
         | StrOutputParser()
     )
 
-    standalone = (
-        last_n_messages(12)
-        | contextualize_q
-    )
-
-    # 2) Retrieve using the standalone question
-    docs = standalone | retriever
+    standalone = last_n_messages(12) | contextualize_q
+    docs = ({"standalone": standalone}
+            | RunnableLambda(lambda x: x["standalone"])
+            | retriever)
 
     # 3) Answer prompt sees history + retrieved context + the rewritten question
     answer_prompt = ChatPromptTemplate.from_messages([
         ("system",
-         "You are a helpful assistant. Use the provided context and conversation history to answer. "
-         "If the answer is not in the context, say you don't know."),
+        "You are a helpful assistant. Use the provided context and conversation history to answer. "
+        "If the answer is not in the context, say you don't know."),
         ("placeholder", "{history}"),
         ("human", "Question:\n{standalone}\n\nContext:\n{context}"),
     ])
@@ -62,7 +67,6 @@ def build_contextual_rag_with_history(retriever, llm, session_store):
         | llm
         | StrOutputParser()
     )
-
 
     # Return both docs and answer (and keep standalone for optional debugging)
     base_chain = RunnableParallel(

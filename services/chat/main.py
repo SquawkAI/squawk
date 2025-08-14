@@ -1,5 +1,5 @@
 import os
-import uuid
+from uuid import uuid4
 from typing import Optional
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -38,7 +38,7 @@ async def status_check():
 async def handle_conversation(conversation_request: Conversation):
     conversation_request_dict = conversation_request.dict()
 
-    conversation_id = conversation_request_dict.get('id')
+    conversation_id = conversation_request.id or str(uuid4())
     project_id = conversation_request_dict.get('project_id')
     query = conversation_request_dict.get('query')
 
@@ -54,28 +54,3 @@ async def handle_conversation(conversation_request: Conversation):
         {"question": query}, config=config)
 
     return result["answer"]
-
-
-# if __name__ == "__main__":
-#     supabase_retriever = build_supabase_retriever(
-#         supabase, "3dd5aaf4-9d39-45ab-8cbb-c1e2f4977899"
-#     )
-
-#     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-
-#     chain = build_contextual_rag_with_history(supabase_retriever, llm)
-
-#     result1 = chain.invoke(
-#         {"question": "What company did Sumit work at before JPMorganChase?"}, config={"configurable": {"session_id": "session-1"}})
-#     print("Answer 1:", result1["answer"])
-#     print("Sources 1:", [
-#         {"chunk_id": d.metadata.get("chunk_id"),
-#          "file_id": d.metadata.get("file_id"),
-#          "snippet": d.page_content[:120]}
-#         for d in result1["docs"]
-#     ])
-
-#     # Turn 2 (tests history + contextualization)
-#     result2 = chain.invoke({"question": "what did he do?"}, {
-#                            "configurable": {"session_id": "session-1"}})
-#     print("Answer 2:", result2["answer"])
