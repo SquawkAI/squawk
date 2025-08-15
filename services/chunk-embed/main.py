@@ -20,7 +20,7 @@ app = FastAPI()
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # TODO: Determine best embeddings
-embeddings_model = OpenAIEmbeddings()
+embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
 
 SUPPORTED_TYPES = {
     ".pdf": PyPDFLoader,
@@ -29,9 +29,11 @@ SUPPORTED_TYPES = {
     ".docx": UnstructuredWordDocumentLoader,
 }
 
+
 @app.get('/status')
 async def status_check():
     return {"status": "ok", "message": "Embedding service is live"}
+
 
 @app.post('/')
 async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
@@ -41,7 +43,8 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
         raise HTTPException(
             status_code=400, detail=f"Unsupported file type: {ext}")
 
-    temp_path = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}_{file.filename}")
+    temp_path = os.path.join(tempfile.gettempdir(),
+                             f"{uuid.uuid4()}_{file.filename}")
     with open(temp_path, "wb") as f:
         f.write(await file.read())
 
@@ -51,8 +54,12 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
         documents = loader.load()
 
         # TODO: Determine best chunk_size and chunk_overlap
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500, chunk_overlap=50)
+        splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+            encoding_name="cl100k_base",   
+            chunk_size=500,
+            chunk_overlap=100,
+            add_start_index=True,          
+        )
         chunks = splitter.split_documents(documents)
 
         if (not check_file_id(file_id)):
@@ -64,7 +71,7 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
     except Exception as e:
         supabase.table("files").update(
             {"status": "failed"}).eq("id", file_id).execute()
-        
+
         os.remove(temp_path)
 
         raise HTTPException(
@@ -75,6 +82,7 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
         "chunks": len(chunks),
     }
 
+
 def check_file_id(file_id):
     file_check = supabase.table("files").select(
         "id").eq("id", str(file_id)).execute()
@@ -84,22 +92,49 @@ def check_file_id(file_id):
 
     return True
 
+
+def _batched(seq, n):
+    for i in range(0, len(seq), n):
+        yield seq[i:i+n]
+
+
 def save_chunks_and_embeddings(file_id, chunks):
+    # Prepare rows and texts (preserve order by chunk_index)
+    chunk_rows = []
+    texts = []
     for i, chunk in enumerate(chunks):
-        chunk_result = supabase.table("chunks").insert({
+        content = (chunk.page_content or "").strip()
+        chunk_rows.append({
             "file_id": file_id,
-            "content": chunk.page_content,
+            "content": content,
             "chunk_index": i
-        }).execute()
+        })
+        texts.append(content)
 
-        chunk_id = chunk_result.data[0]["id"]
+    # 1) Insert all chunks in one go (returns ids)
+    # If your client supports .select(), you can do: .select("id,chunk_index")
+    inserted = supabase.table("chunks").insert(chunk_rows).execute()
+    if not inserted.data or len(inserted.data) != len(chunk_rows):
+        raise RuntimeError("Failed to insert chunks or row count mismatch.")
+    # Map chunk_index -> generated id
+    idx_to_id = {row["chunk_index"]: row["id"] for row in inserted.data}
 
-        vector = embeddings_model.embed_query(chunk.page_content)
+    # 2) Embed documents in batches (NOT embed_query)
+    EMB_BATCH = 128  # tune as needed for rate limits
+    vectors = [None] * len(texts)
+    pos = 0
+    for batch in _batched(texts, EMB_BATCH):
+        vecs = embeddings_model.embed_documents(batch)  # list[list[float]]
+        vectors[pos:pos+len(vecs)] = vecs
+        pos += len(vecs)
 
-        supabase.table("embeddings").insert({
-            "chunk_id": chunk_id,
-            "embedding": vector
-        }).execute()
+    # 3) Insert embeddings in batches
+    DB_BATCH = 500
+    emb_rows = [{"chunk_id": idx_to_id[i], "embedding": vec}
+                for i, vec in enumerate(vectors)]
+    for batch in _batched(emb_rows, DB_BATCH):
+        supabase.table("embeddings").insert(batch).execute()
 
+    # 4) Mark file complete
     supabase.table("files").update(
         {"status": "completed"}).eq("id", file_id).execute()
