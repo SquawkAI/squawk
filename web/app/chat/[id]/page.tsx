@@ -67,7 +67,6 @@ function normalizeLang(raw: string) {
     return aliasMap[normalized] || normalized;
 }
 
-
 interface MessageProps {
     role: "user" | "assistant";
     content: string;
