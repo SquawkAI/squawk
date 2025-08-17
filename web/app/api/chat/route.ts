@@ -82,8 +82,8 @@ export async function POST(req: NextRequest) {
         if (dataLines.length) flushEvent();
 
         controller.close();
-      } catch (err: any) {
-        controller.enqueue(encoder.encode("Error: " + (err?.message || String(err))));
+      } catch (err: unknown) {
+        controller.enqueue(encoder.encode("Error: " + ((err as Error)?.message || String(err))));
         controller.close();
       }
     },
