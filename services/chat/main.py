@@ -1,16 +1,15 @@
-import sys
 import os
 from uuid import uuid4
 from typing import Optional
 from dotenv import load_dotenv
 from pydantic import BaseModel
+import asyncio
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from supabase import Client, create_client
 from langchain_openai import ChatOpenAI
-
-from fastapi.responses import StreamingResponse
-import asyncio
+from langchain_core.output_parsers import StrOutputParser
 
 from retrievers.SupabaseRetriever import build_supabase_retriever
 from chains.contextual_history_with_memory import build_contextual_rag_with_history
@@ -34,24 +33,18 @@ class Conversation(BaseModel):
     query: str
 
 
-def extract_text(chunk):
-    # token strings
-    if isinstance(chunk, str):
-        return chunk
-    # LangChain message chunk (e.g., AIMessageChunk)
-    content = getattr(chunk, "content", None)
-    if isinstance(content, str) and content:
-        return content
-    # dict payloads
-    if isinstance(chunk, dict):
-        # prefer model output keys; ignore "standalone", "docs", etc.
-        for k in ("answer", "output_text", "output", "text"):
-            if isinstance(chunk.get(k), str) and chunk[k]:
-                return chunk[k]
-    return ""
+def _sse_event_from_text(text: str) -> str:
+    """Encode text as one SSE event, preserving newlines per spec."""
+    lines = text.split("\n")
+    out = []
+    for ln in lines:
+        # empty line -> contributes '\n' when client joins
+        out.append(f"data: {ln}\n")
+    out.append("\n")  # end of event
+    return "".join(out)
 
 
-@app.get('/status')
+@app.get("/status")
 async def status_check():
     return {"status": "ok", "message": "Chat service is live"}
 
@@ -72,22 +65,25 @@ async def conversation(conversation_request: Conversation):
         supabase_retriever, llm, session_store)
     config = {"configurable": {"session_id": conversation_id}}
 
-    async def sse():
+    # IMPORTANT: project the chain output to ONLY the final answer,
+    # so we don't stream 'standalone' rewrite or 'docs' events.
+    answer_only = chain.pick("answer") | StrOutputParser()
+
+    async def sse_generator():
         try:
-            async for chunk in chain.astream({"question": query}, config=config):
-                text = extract_text(chunk)
-                if text:
-                    # SSE frame
-                    yield f"data: {text}\n\n"
-                    # give event loop a tick so proxies flush promptly
+            async for token in answer_only.astream({"question": query}, config=config):
+                # token is a plain string chunk from the final answer only
+                if token:
+                    yield _sse_event_from_text(token)
                     await asyncio.sleep(0)
-            # optional completion signal
-            yield "event: end\ndata: [done]\n\n"
+            # completion marker (optional)
+            yield "data: [done]\n\n"
+        except asyncio.CancelledError:
+            return
         except Exception as e:
             yield f"event: error\ndata: {str(e)}\n\n"
 
-    resp = StreamingResponse(sse(), media_type="text/event-stream")
-    # helpful anti-buffering headers for Nginx/Cloudflare
+    resp = StreamingResponse(sse_generator(), media_type="text/event-stream")
     resp.headers["Cache-Control"] = "no-cache"
     resp.headers["Connection"] = "keep-alive"
     resp.headers["X-Accel-Buffering"] = "no"

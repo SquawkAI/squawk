@@ -1,65 +1,89 @@
 // app/api/chat/route.ts
-import { NextRequest } from "next/server";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+import type { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { messages = [] } = await req.json().catch(() => ({}));
+  const payload = await req.json().catch(() => ({}));
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const upstream = await fetch("http://localhost:8080/conversation", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Accept": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
     },
-    body: JSON.stringify({
-      model: "gpt-4o", // Or "gpt-4o-mini"
-      messages,
-      stream: true,
-    }),
+    body: JSON.stringify(payload),
   });
 
-  if (!response.ok || !response.body) {
-    return new Response("Failed to connect to OpenAI", { status: 500 });
+  if (!upstream.ok || !upstream.body) {
+    return new Response("Failed to connect to localhost:8080", { status: 502 });
   }
 
-  const encoder = new TextEncoder();
   const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
-      const reader = response.body!.getReader();
+      const reader = upstream.body!.getReader();
+
+      let buf = "";                 // chunk buffer
+      let dataLines: string[] = []; // collects `data:` lines for one event
+
+      const flushEvent = () => {
+        const joined = dataLines.join("\n"); // SSE spec: join with LF
+        dataLines = [];
+        // handle completion marker
+        if (joined.trim().toLowerCase() === "[done]") {
+          controller.close();
+          return true;
+        }
+        controller.enqueue(encoder.encode(joined));
+        return false;
+      };
 
       try {
         while (true) {
-          const { done, value } = await reader.read();
+          const { value, done } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
+          buf += decoder.decode(value, { stream: true });
 
-          for (const line of chunk.split("\n")) {
-            if (line.startsWith("data: ")) {
-              const data = line.replace("data: ", "").trim();
-              if (data === "[DONE]") {
-                controller.close();
-                return;
-              }
+          // Process per line
+          let idx: number;
+          while ((idx = buf.indexOf("\n")) !== -1) {
+            const line = buf.slice(0, idx).replace(/\r$/, ""); // strip CR if any
+            buf = buf.slice(idx + 1);
 
-              const json = JSON.parse(data);
-              const content = json.choices?.[0]?.delta?.content;
-              if (content) {
-                controller.enqueue(encoder.encode(content));
+            if (line === "") {
+              // blank line => end of event
+              if (dataLines.length) {
+                if (flushEvent()) return;
               }
+              continue;
             }
+
+            if (line.startsWith(":")) {
+              // comment/heartbeat -> ignore
+              continue;
+            }
+
+            if (line.startsWith("data:")) {
+              // remove exactly one field-space if present
+              const value = line.startsWith("data: ") ? line.slice(6) : line.slice(5);
+              dataLines.push(value);
+              continue;
+            }
+
+            // Ignore other SSE fields for this use-case (id, event, retry)
           }
         }
+
+        // flush any trailing event if the stream ends without a final blank line
+        if (dataLines.length) flushEvent();
+
         controller.close();
-      } catch (err) {
-        controller.enqueue(encoder.encode("Error: " + (err as Error).message));
+      } catch (err: any) {
+        controller.enqueue(encoder.encode("Error: " + (err?.message || String(err))));
         controller.close();
       }
     },
@@ -68,7 +92,8 @@ export async function POST(req: NextRequest) {
   return new Response(stream, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-cache",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
     },
   });
 }
