@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useParams } from "next/navigation";
+import { v4 as uuid } from "uuid";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -140,10 +142,11 @@ const Message: React.FC<MessageProps> = ({ role, content }) => {
 
 // ===== Main ChatPage =====
 
-const SESSION_ID = "session-1";
-const PROJECT_ID = "3dd5aaf4-9d39-45ab-8cbb-c1e2f4977899";
-
 export default function ChatPage() {
+    const { id: projectId } = useParams();
+    const [sessionId, setSessionId] = useState(uuid());
+    
+    
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<{ role: "user" | "assistant", content: string }[]>([
         { role: "assistant", content: "Hi! Ask me anything about your course materials." },
@@ -179,7 +182,7 @@ export default function ChatPage() {
             const res = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: SESSION_ID, project_id: PROJECT_ID, query: text }),
+                body: JSON.stringify({ id: sessionId, project_id: projectId, query: text }),
             });
 
             if (!res.body) throw new Error("No response body");
