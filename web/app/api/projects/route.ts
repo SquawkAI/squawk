@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
             ])
             .select("*")
             .single()
+            
 
         if(error || !newProject) {
             return NextResponse.json({ error: "We could not create your project" }, { status: 500 });

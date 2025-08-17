@@ -96,9 +96,6 @@ export async function POST(req: NextRequest) {
     formData.append("file", file);
 
     axios.post(`${embeddingUrl}/`, formData)
-      .catch((err) => {
-        console.error("Background chunking + embedding request failed:", err);
-      });
 
     uploadedPaths.push({
       id: data.id,
