@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { supabase } from "@/lib/supabase";
-import axios from "axios";
+
+import { mintEmbeddingToken } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
   // Check authentication
@@ -14,14 +15,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("projectId");
 
-  if (!projectId) {
-    return NextResponse.json({ error: "Missing projectId" }, { status: 400 });
-  }
-
   const { data, error } = await supabase
     .from("files")
-    .select("*")
-    .eq("project_id", projectId)
+    .select("*, project!inner(id)")
+    .eq("project.id", projectId)
+    .eq("project.owner_id", session.user.id)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -86,19 +84,35 @@ export async function POST(req: NextRequest) {
       project_id: projectId as string,
     }).select().single();
 
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    if (insertError || !data) {
+      // rollback storage object to avoid orphans
+      await supabase.storage.from("user-uploads").remove([storagePath]).catch(() => { });
+      return NextResponse.json({ error: "Failed to register file metadata" }, { status: 500 });
     }
 
-    const embeddingUrl = process.env.EMBEDDING_SERVICE_URL || "http://localhost:8000";
+    const embeddingUrl = process.env.EMBEDDING_SERVICE_URL
+
+    let token: string;
+    try {
+      token = await mintEmbeddingToken(session.user.id);
+    } catch (e: unknown) {
+      // roll back status so UI can retry
+      await supabase.from("files").update({ status: "error" }).eq("id", data.id);
+      return NextResponse.json({ error: `Token mint failed: ${(e as Error)?.message || e}` }, { status: 500 });
+    }
+
     const formData = new FormData();
     formData.append("file_id", data.id);
     formData.append("file", file);
 
-    axios.post(`${embeddingUrl}/`, formData)
-      .catch((err) => {
-        console.error("Background chunking + embedding request failed:", err);
-      });
+    fetch(`${embeddingUrl}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    }).catch(async (err) => {
+      console.error("Embedding request failed:", err);
+      await supabase.from("files").update({ status: "error" }).eq("id", data.id);
+    });
 
     uploadedPaths.push({
       id: data.id,

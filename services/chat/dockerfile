@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS base
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /app
+
+# handy for healthchecks/debug
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
+
+# deps first (cache-friendly)
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# copy source
+COPY . .
+
+# non-root (good practice)
+RUN useradd -m appuser
+USER appuser
+
+EXPOSE 8000
+# if your file is named something else, change main:app accordingly
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

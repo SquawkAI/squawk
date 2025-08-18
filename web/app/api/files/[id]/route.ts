@@ -3,24 +3,25 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { supabase } from "@/lib/supabase";
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: fileId } = await params;
+    const { id: fileId } = params;
 
     // Fetch file metadata
     const { data: fileRecord, error: fetchError } = await supabase
       .from("files")
-      .select("*")
+      .select("id, storage_path, project!inner(id, owner_id)")
       .eq("id", fileId)
+      .eq("project.owner_id", session.user.id)
       .single();
 
     if (fetchError || !fileRecord) {
-      return NextResponse.json( { error: "File not found" }, { status: 404 }
+      return NextResponse.json({ error: "File not found" }, { status: 404 }
       );
     }
 

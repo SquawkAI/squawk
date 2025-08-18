@@ -1,0 +1,55 @@
+# Python environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Jupyter Notebooks (optional)
+.ipynb_checkpoints
+
+# Logs
+*.log
+
+# Secrets and environment variables
+.env
+.env.*
+
+# LangChain vectorstore directories (optional)
+chroma/
+*.faiss
+*.pkl
+
+# VSCode and IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage/test outputs
+htmlcov/
+coverage.xml
+.cache/
+.tox/
+.nox/
+
+# Pytest
+.pytest_cache/
+
+# MyPy / Linting
+.mypy_cache/
+.dmypy.json
+ruff_cache/
