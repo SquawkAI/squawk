@@ -5,11 +5,13 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 import asyncio
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from supabase import Client, create_client
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
+
+from utils.security import get_user_id_from_request, assert_project_owned
 
 from retrievers.SupabaseRetriever import build_supabase_retriever
 from chains.contextual_history_with_memory import build_contextual_rag_with_history
@@ -50,11 +52,14 @@ async def status_check():
 
 
 @app.post("/")
-async def conversation(conversation_request: Conversation):
+async def conversation(request: Request, conversation_request: Conversation):
     data = conversation_request.dict()
     conversation_id = data.get("id") or str(uuid4())
     project_id = data.get("project_id")
     query = data.get("query")
+
+    user_id = get_user_id_from_request(request)
+    assert_project_owned(supabase, project_id, user_id)
 
     if not project_id or not query:
         raise HTTPException(

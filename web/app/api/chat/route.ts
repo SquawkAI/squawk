@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+import { mintEmbeddingToken } from "@/lib/security";
+
 const CHAT_SERVICE = process.env.CHAT_SERVICE_URL
 
 export async function POST(req: NextRequest) {
@@ -15,6 +17,14 @@ export async function POST(req: NextRequest) {
 
   const payload = await req.json().catch(() => ({}));
 
+  let token: string;
+  try {
+    token = await mintEmbeddingToken(session.user.id);
+  } catch (e: unknown) {
+    // roll back status so UI can retry
+    return NextResponse.json({ error: `Token mint failed: ${(e as Error)?.message || e}` }, { status: 500 });
+  }
+
   const upstream = await fetch(CHAT_SERVICE!, {
     method: "POST",
     headers: {
@@ -22,6 +32,7 @@ export async function POST(req: NextRequest) {
       "Accept": "text/event-stream",
       "Cache-Control": "no-cache",
       "Connection": "keep-alive",
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify(payload),
   });
