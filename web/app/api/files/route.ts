@@ -14,14 +14,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("projectId");
 
-  if (!projectId) {
-    return NextResponse.json({ error: "Missing projectId" }, { status: 400 });
-  }
-
   const { data, error } = await supabase
     .from("files")
-    .select("*")
-    .eq("project_id", projectId)
+    .select("*, project!inner(id)")
+    .eq("project.id", projectId)
+    .eq("project.owner_id", session.user.id)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -86,11 +83,13 @@ export async function POST(req: NextRequest) {
       project_id: projectId as string,
     }).select().single();
 
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    if (insertError || !data) {
+      // rollback storage object to avoid orphans
+      await supabase.storage.from("user-uploads").remove([storagePath]).catch(() => { });
+      return NextResponse.json({ error: "Failed to register file metadata" }, { status: 500 });
     }
 
-    const embeddingUrl = process.env.EMBEDDING_SERVICE_URL || "http://localhost:8000";
+    const embeddingUrl = process.env.EMBEDDING_SERVICE_URL
     const formData = new FormData();
     formData.append("file_id", data.id);
     formData.append("file", file);

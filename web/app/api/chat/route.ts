@@ -1,10 +1,21 @@
 // app/api/chat/route.ts
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+const CHAT_SERVICE = process.env.CHAT_SERVICE_URL
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const payload = await req.json().catch(() => ({}));
 
-  const upstream = await fetch("http://localhost:8080/conversation", {
+  const upstream = await fetch(CHAT_SERVICE!, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -16,7 +27,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!upstream.ok || !upstream.body) {
-    return new Response("Failed to connect to localhost:8080", { status: 502 });
+    return new Response("Something went wrong", { status: 502 });
   }
 
   const decoder = new TextDecoder();

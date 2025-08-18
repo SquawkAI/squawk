@@ -49,7 +49,7 @@ async def status_check():
     return {"status": "ok", "message": "Chat service is live"}
 
 
-@app.post("/conversation")
+@app.post("/")
 async def conversation(conversation_request: Conversation):
     data = conversation_request.dict()
     conversation_id = data.get("id") or str(uuid4())

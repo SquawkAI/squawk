@@ -3,36 +3,21 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { supabase } from "@/lib/supabase";
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { id: projectId } = await params;
+        const { id: projectId } = params;
         const body = await req.json();
         const { title } = body;
-
-        if (!title || typeof title !== "string") {
-            return NextResponse.json({ error: "Invalid title" }, { status: 400 });
-        }
-
-        const { data: projectRecord, error: fetchError } = await supabase
-            .from("project")
-            .select("*")
-            .eq("id", projectId)
-            .single();
-
-        if (fetchError || !projectRecord) {
-            console.log(fetchError);
-
-            return NextResponse.json({ error: "Project not found" }, { status: 404 });
-        }
 
         const { error: updateError } = await supabase
             .from("project")
             .update({ title })
+            .eq("owner_id", session.user.id)
             .eq("id", projectId);
 
         if (updateError) {
@@ -47,18 +32,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { id: projectId } = await params;
+        const { id: projectId } = params;
 
         const { error: deleteError } = await supabase
             .from("project")
             .delete()
+            .eq("owner_id", session.user.id)
             .eq("id", projectId)
 
         if (deleteError) {
@@ -73,14 +59,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
 }
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { id: projectId } = await params;
+        const { id: projectId } = params;
 
         const { data: project, error } = await supabase
             .from("project")
