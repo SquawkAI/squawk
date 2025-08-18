@@ -3,12 +3,14 @@ import tempfile
 from dotenv import load_dotenv
 
 import uuid
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from supabase import create_client, Client
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader, UnstructuredWordDocumentLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
+
+from utils.security import get_user_id_from_request, assert_file_owned
 
 load_dotenv()
 
@@ -29,14 +31,16 @@ SUPPORTED_TYPES = {
     ".docx": UnstructuredWordDocumentLoader,
 }
 
-
 @app.get('/status')
 async def status_check():
     return {"status": "ok", "message": "Embedding service is live"}
 
 
 @app.post('/')
-async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
+async def embed_file(request: Request, file_id: str = Form(...), file: UploadFile = File(...)):
+    user_id = get_user_id_from_request(request)
+    assert_file_owned(supabase, file_id, user_id)
+    
     ext = os.path.splitext(file.filename)[1].lower()
 
     if ext not in SUPPORTED_TYPES:
@@ -55,10 +59,10 @@ async def embed_file(file_id: str = Form(...), file: UploadFile = File(...)):
 
         # TODO: Determine best chunk_size and chunk_overlap
         splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            encoding_name="cl100k_base",   
+            encoding_name="cl100k_base",
             chunk_size=500,
             chunk_overlap=100,
-            add_start_index=True,          
+            add_start_index=True,
         )
         chunks = splitter.split_documents(documents)
 

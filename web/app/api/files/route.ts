@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { supabase } from "@/lib/supabase";
-import axios from "axios";
+
+import { mintEmbeddingToken } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
   // Check authentication
@@ -90,11 +91,28 @@ export async function POST(req: NextRequest) {
     }
 
     const embeddingUrl = process.env.EMBEDDING_SERVICE_URL
+
+    let token: string;
+    try {
+      token = await mintEmbeddingToken(session.user.id);
+    } catch (e: unknown) {
+      // roll back status so UI can retry
+      await supabase.from("files").update({ status: "error" }).eq("id", data.id);
+      return NextResponse.json({ error: `Token mint failed: ${(e as Error)?.message || e}` }, { status: 500 });
+    }
+
     const formData = new FormData();
     formData.append("file_id", data.id);
     formData.append("file", file);
 
-    axios.post(`${embeddingUrl}/`, formData)
+    fetch(`${embeddingUrl}/`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    }).catch(async (err) => {
+      console.error("Embedding request failed:", err);
+      await supabase.from("files").update({ status: "error" }).eq("id", data.id);
+    });
 
     uploadedPaths.push({
       id: data.id,
