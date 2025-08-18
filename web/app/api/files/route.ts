@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     formData.append("file_id", data.id);
     formData.append("file", file);
 
-    fetch(`${embeddingUrl}/`, {
+    fetch(`${embeddingUrl}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,

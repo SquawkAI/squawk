@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
                 fd.append("file_id", fileId);
                 fd.append("file", fileBlob, fileRecord.name);
 
-                const resp = await fetch(`${embeddingUrl}/`, { method: "POST", body: fd });
+                const resp = await fetch(`${embeddingUrl}`, { method: "POST", body: fd });
                 if (!resp.ok) {
                     // mark error so UI can retry
                     await supabase.from("files").update({ status: "error" }).eq("id", fileId);
