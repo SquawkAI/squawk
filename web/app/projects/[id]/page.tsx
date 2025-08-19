@@ -174,7 +174,7 @@ const DashboardPage: React.FC = () => {
                 </form>
                 {/* Project Description (static) */}
                 <div className="text-stone-600 text-md">
-                    {description || "No description provided"}
+                    {project?.description || "No description provided"}
                 </div>
             </header>
             {/* Main content */}
