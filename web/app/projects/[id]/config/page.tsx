@@ -2,7 +2,7 @@ import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import React from "react";
 
-const TonePage = () => {
+const ConfigPage = () => {
   return (
     <div className="mx-auto max-w-7xl flex flex-col gap-4">
       <Link
@@ -176,4 +176,4 @@ const TonePage = () => {
   );
 };
 
-export default TonePage;
+export default ConfigPage;
