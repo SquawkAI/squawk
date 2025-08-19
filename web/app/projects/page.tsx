@@ -1,201 +1,269 @@
-'use client';
+"use client";
 
-import React, { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import useSWR from "swr";
 
-import { IProject } from './layout';
-import { NewProjectDialog } from '@/components/NewProjectDialog';
-import { Folder, Clock, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import axios from 'axios';
+import { IProject } from "./layout";
+import { NewProjectDialog } from "@/components/NewProjectDialog";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import axios from "axios";
+import { MagnifyingGlass } from "@phosphor-icons/react";
+import { DotsSix, Folder, DotsThreeVertical } from "@phosphor-icons/react";
 
 const ProjectsPage: React.FC = () => {
-    const router = useRouter();
+  const router = useRouter();
+  const [query, setQuery] = useState("");
 
-    const [query, setQuery] = useState('');
+  const { data, error, isLoading, mutate } = useSWR(
+    "/api/projects",
+    async () => {
+      const res = await axios.get("/api/projects");
+      return res.data;
+    }
+  );
 
-    const { data, error, isLoading, mutate } = useSWR('/api/projects', async () => {
-        const res = await axios.get("/api/projects");
-        return res.data;
+  const getLastOpened = (updatedAt: string) => {
+    const updatedDate = new Date(updatedAt);
+    const now = new Date();
+    const diffMs = now.getTime() - updatedDate.getTime();
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+
+    if (diffHrs < 1) return "just now";
+    if (diffHrs === 1) return "1 hour ago";
+    return `${diffHrs} hours ago`;
+  };
+
+  const filteredProjects = useMemo(() => {
+    const allProjects: IProject[] = data?.projects || [];
+    const q = query.trim().toLowerCase();
+    return q
+      ? allProjects.filter((p) => p.title.toLowerCase().includes(q))
+      : allProjects;
+  }, [query, data]);
+
+  async function createProject(values: {
+    title: string;
+    description?: string;
+  }) {
+    const { data: created } = await axios.post<IProject>("/api/projects", {
+      title: values.title,
+      description: values.description,
     });
 
-    const filteredProjects = useMemo(() => {
-        const allProjects: IProject[] = data?.projects || [];
-
-        const q = query.trim().toLowerCase();
-        return q
-            ? allProjects.filter(p => p.title.toLowerCase().includes(q))
-            : allProjects;
-    }, [query, data]);
-
-    const recent = filteredProjects.slice(0, 3);
-
-    const getLastOpened = (updatedAt: string) => {
-        const updatedDate = new Date(updatedAt);
-        const now = new Date();
-        const diffMs = now.getTime() - updatedDate.getTime();
-        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-
-        if (diffHrs < 1) return 'just now';
-        if (diffHrs === 1) return '1 hour ago';
-        return `${diffHrs} hours ago`;
-    };
-
-    async function createProject(values: { title: string; description?: string }) {
-        const { data: created } = await axios.post<IProject>("/api/projects", {
-            title: values.title,
-            description: values.description,
-        })
-
-        await mutate((current?: { projects: IProject[] } | null) => {
-            const list = current?.projects ?? []
-            return { ...(current ?? { projects: [] }), projects: [created, ...list] }
-        }, { revalidate: false, populateCache: true });
-
-        if (created) {
-            router.push(`/projects/${created.id}`);
-        }
-    }
-
-    async function deleteProject(projectId: string) {
-        await axios.delete(`/api/projects/${projectId}`)
-
-        await mutate(
-            (current?: { projects: IProject[] } | null) => {
-                const list = current?.projects ?? []
-                return {
-                    ...(current ?? { projects: [] }),
-                    projects: list.filter(p => p.id !== projectId),
-                }
-            },
-            { revalidate: false, populateCache: true, rollbackOnError: true }
-        )
-    }
-
-    if (error) {
-        return <div className="text-center text-red-500">Failed to load projects.</div>;
-    }
-
-    if (isLoading) {
-        return <div className="text-center text-gray-500">Loading projects...</div>;
-    }
-
-    return (
-        <>
-            <header className="flex items-center justify-between gap-4 mb-12 flex-shrink-0">
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold">Projects</p>
-
-                <NewProjectDialog
-                    trigger={
-                        <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-10">
-                            <Link
-                                className="text-base font-medium"
-                                href="/projects"
-                            >
-                                My projects
-                            </Link>
-                            <Button>+ New Project</Button>
-                        </div>
-                    }
-                    onCreate={createProject}
-                />
-            </header>
-
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-                {/* Search bar */}
-                <div className="flex justify-center">
-                    <input
-                        type="search"
-                        placeholder="Search Projects"
-                        value={query}
-                        onChange={e => setQuery(e.target.value)}
-                        className="w-full max-w-xl rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
-                    />
-                </div>
-
-                {/* Recent Projects */}
-                <section>
-                    <h2 className="text-lg font-semibold mb-4">Recent</h2>
-                    {recent.length === 0 ? (
-                        <p className="text-gray-500 text-sm italic">
-                            No recent projects yet. Create one to get started!
-                        </p>
-                    ) : (
-                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            {recent.map(p => (
-                                <Link
-                                    key={p.id}
-                                    href={`/projects/${p.id}`}
-                                    className="group block rounded-lg border border-gray-200 p-5 hover:shadow-md transition"
-                                >
-                                    <div className="flex items-start gap-4">
-                                        <Folder
-                                            className="h-10 w-10 shrink-0 text-yellow-500"
-                                            strokeWidth={1.5}
-                                            fill="currentColor"
-                                        />
-                                        <div className="flex flex-col gap-1">
-                                            <h3 className="font-semibold">{p.title}</h3>
-                                            <p className="text-xs text-gray-500 line-clamp-2">
-                                                {p.description || "No description provided."}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="mt-4 flex items-center gap-1 text-xs text-gray-500">
-                                        <Clock className="h-3 w-3" />
-                                        <span>Last opened {getLastOpened(p.updated_at)}</span>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {/* All Projects */}
-                <section>
-                    <h2 className="text-lg font-semibold mb-4">All Projects</h2>
-
-                    {filteredProjects.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
-                            <p className="mb-4 italic">Nothing here yet… let’s fix that! Create your first project below.</p>
-                            
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {filteredProjects.map((p) => (
-                                <div
-                                    key={p.id}
-                                    className="flex items-center justify-between rounded-lg border border-gray-200 px-5 py-3 hover:shadow-sm transition"
-                                >
-                                    <div>
-                                        <h3 className="font-medium">{p.title}</h3>
-                                        <p className="text-xs text-gray-500">
-                                            {p.description || "No description provided."}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                        <Button asChild>
-                                            <Link href={`/projects/${p.id}`}>View</Link>
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            onClick={() => deleteProject(p.id)}
-                                            className="flex items-center gap-1"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-            </div>
-        </>
+    await mutate(
+      (current?: { projects: IProject[] } | null) => {
+        const list = current?.projects ?? [];
+        return {
+          ...(current ?? { projects: [] }),
+          projects: [created, ...list],
+        };
+      },
+      { revalidate: false, populateCache: true }
     );
+
+    if (created) router.push(`/projects/${created.id}`);
+  }
+
+  async function deleteProject(projectId: string) {
+    await axios.delete(`/api/projects/${projectId}`);
+    await mutate(
+      (current?: { projects: IProject[] } | null) => {
+        const list = current?.projects ?? [];
+        return {
+          ...(current ?? { projects: [] }),
+          projects: list.filter((p) => p.id !== projectId),
+        };
+      },
+      { revalidate: false, populateCache: true, rollbackOnError: true }
+    );
+  }
+
+  if (error)
+    return (
+      <div className="text-center text-red-500">Failed to load projects.</div>
+    );
+  if (isLoading)
+    return <div className="text-center text-gray-500">Loading projects...</div>;
+
+  return (
+    <div className="mx-auto max-w-7xl p-4 flex flex-col gap-8">
+      {/* Header */}
+      <header className="flex items-center justify-between">
+        <div className="inline-flex flex-col justify-center items-start gap-1">
+          <div className="text-3xl font-bold">Projects</div>
+          <div className="text-stone-600 text-md">
+            View and manage all projects
+          </div>
+        </div>
+
+        <NewProjectDialog
+          trigger={
+            <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-10">
+              <Button>+ New Project</Button>
+            </div>
+          }
+          onCreate={createProject}
+        />
+      </header>
+
+      {/* Page content */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">All Projects</h2>
+
+        {/* Search */}
+        <div className="relative">
+          <input
+            type="search"
+            placeholder="Search your projects"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+          />
+          <MagnifyingGlass
+            size={18}
+            weight="bold"
+            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
+          />
+        </div>
+
+        {/* Projects */}
+        {filteredProjects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
+            <p className="mb-4 italic">
+              Nothing here yet… let’s fix that! Create your first project below.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+            {filteredProjects.map((p) => (
+              <ProjectCard
+                key={p.id}
+                title={p.title}
+                description={p.description}
+                lastOpened={getLastOpened(p.updated_at)}
+                onOpen={() => router.push(`/projects/${p.id}`)}
+                onDelete={() => deleteProject(p.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+};
+
+// ProjectCard component
+const ProjectCard: React.FC<{
+  title: string;
+  description?: string;
+  lastOpened: string;
+  onOpen: () => void;
+  onDelete: () => void;
+}> = ({ title, description, lastOpened, onOpen, onDelete }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click or Escape
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handle(e: MouseEvent | KeyboardEvent) {
+      if (e instanceof KeyboardEvent && e.key === "Escape") setMenuOpen(false);
+      if (
+        e instanceof MouseEvent &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      )
+        setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    document.addEventListener("keydown", handle);
+    return () => {
+      document.removeEventListener("mousedown", handle);
+      document.removeEventListener("keydown", handle);
+    };
+  }, [menuOpen]);
+
+  return (
+    <div className="flex flex-col relative border border-gray-300 rounded-md p-2 justify-between">
+      {/* Clickable Content */}
+      <div
+        className="flex items-stretch gap-4 py-2 cursor-pointer rounded"
+        onClick={onOpen}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpen();
+          }
+        }}
+      >
+        {/* Folder Icon */}
+        <div className="h-full w-auto">
+          <svg
+            className="h-full"
+            viewBox="0 0 118 113"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M108.714 20.4546H60.7609L45.2975 2.99792C44.4593 2.0441 43.4615 1.28788 42.3621 0.773227C41.2627 0.258576 40.0837 -0.00424073 38.8935 5.17433e-05H9.0595C6.65677 5.17433e-05 4.35245 1.07756 2.65346 2.99555C0.954479 4.91353 0 7.51488 0 10.2273V102.669C0.00299637 105.275 0.921452 107.774 2.55395 109.617C4.18645 111.46 6.39974 112.497 8.70844 112.5H109.218C111.486 112.497 113.66 111.478 115.264 109.667C116.868 107.857 117.77 105.402 117.773 102.842V30.6819C117.773 27.9694 116.819 25.3681 115.12 23.4501C113.421 21.5321 111.117 20.4546 108.714 20.4546Z"
+              fill="#F59E0B"
+            />
+          </svg>
+        </div>
+        {/* Content */}
+        <div className="flex flex-col w-full">
+          <div className="text-lg leading-tight text-black truncate max-w-xs">
+            {title}
+          </div>
+          <div className="text-sm text-stone-500 truncate max-w-xs">
+            {description || "No description provided"}
+          </div>
+          <div className="relative w-full">
+            <div className="text-sm text-stone-500/50 truncate max-w-xs">
+              Opened {lastOpened}
+            </div>
+            <div className="absolute right-0 top-0">
+              <div className="relative inline-block">
+                <button
+                  className="flex items-center justify-center rounded-full hover:bg-gray-100 transition z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen((v) => !v);
+                  }}
+                  tabIndex={0}
+                  aria-haspopup="true"
+                  aria-expanded={menuOpen}
+                  aria-label="Open project menu"
+                  type="button"
+                >
+                  <DotsThreeVertical
+                    weight="bold"
+                    className="w-auto h-5 text-gray-400"
+                  />
+                </button>
+                {menuOpen && (
+                  <div
+                    ref={menuRef}
+                    className="absolute left-0 top-full mt-2 bg-white border border-gray-200 rounded shadow-lg p-2 z-20"
+                  >
+                    <button className="flex items-center gap-1 group cursor-pointer p-1 rounded-md" onClick={e => { e.stopPropagation(); onDelete(); }}>
+                      <Trash2 size={18} className="text-black group-hover:text-red-500 transition-colors " />
+                      <div className="text-sm text-black group-hover:text-red-500 transition-colors">Delete</div>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ProjectsPage;

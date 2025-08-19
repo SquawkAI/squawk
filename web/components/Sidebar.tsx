@@ -40,7 +40,7 @@ export function AppSidebar() {
                     {/* Selected: Sources */}
                     <div className="mt-4 flex flex-col space-y-6">
                         <Link
-                            href="/sources"
+                            href={`/projects/${projectId}`}
                             className="
                                 inline-flex flex-col items-center gap-1
                                 px-3 py-2
@@ -56,7 +56,7 @@ export function AppSidebar() {
 
                         {/* Tone */}
                         <Link
-                            href="/tone"
+                            href={`/projects/${projectId}/tone`}
                             className="
                                 inline-flex flex-col items-center gap-1
                                 px-3 py-2
@@ -84,7 +84,7 @@ export function AppSidebar() {
 
                         {/* Share */}
                         <Link
-                            href="/share"
+                            href={`/projects/${projectId}/share`}
                             className="
                                 inline-flex flex-col items-center gap-1
                                 px-3 py-2
