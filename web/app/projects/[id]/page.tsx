@@ -13,7 +13,7 @@ import { supabaseClient } from "@/lib/supabase";
 
 import { IProject } from "../layout";
 
-import { FolderSimple, WarningCircle, Spinner, PencilSimpleIcon, MagnifyingGlass } from "@phosphor-icons/react";
+import { FolderSimple, WarningCircle, Spinner, PencilSimpleIcon, MagnifyingGlass, ArrowLeft } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { FileUpload } from "@/components/FileUpload";
 import { FilesTable } from "@/components/FilesTable";
@@ -132,9 +132,14 @@ const DashboardPage: React.FC = () => {
     );
 
     return (
-        <div className="mx-auto max-w-7xl p-4 flex flex-col gap-8">
+        <div className="mx-auto max-w-7xl p-4 flex flex-col gap-4">
+            <Link href="/projects" className="flex items-center gap-1 text-sm text-black hover:text-stone-800 transition-colors">
+                <ArrowLeft size={16} />
+                Back
+            </Link>
             {/* Header */}
             <header className="flex flex-col items-start gap-1 flex-shrink-0">
+                {/* Back button */}
                 {/* Project Title */}
                 <form
                     className="group relative flex items-center gap-2 cursor-pointer"
@@ -180,24 +185,22 @@ const DashboardPage: React.FC = () => {
             {/* Main content */}
             <div className="flex flex-1 gap-8">
                 {/* Left half */}
-                <div className="w-1/2 space-y-4 overflow-y-auto">
+                <div className="flex flex-col gap-4 w-1/2 overflow-y-auto">
                     {/* Title + Search */}
-                    <div className="space-y-4">
-                        <h2 className="text-lg font-semibold">Sources</h2>
-                        <div className="relative">
-                            <input
-                                type="search"
-                                placeholder="Search your sources"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="flex w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
-                            />
-                            <MagnifyingGlass
-                                size={18}
-                                weight="bold"
-                                className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
-                            />
-                        </div>
+                    <h2 className="text-lg font-semibold">Sources</h2>
+                    <div className="relative">
+                        <input
+                            type="search"
+                            placeholder="Search your sources"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="flex w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                        />
+                        <MagnifyingGlass
+                            size={18}
+                            weight="bold"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
+                        />
                     </div>
                     {/* Upload area */}
                     {project?.id && (<FileUpload onUploadSuccess={handleUploadSuccess} projectId={project.id} />)}
