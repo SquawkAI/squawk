@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -10,11 +10,19 @@ import {
     SidebarGroup,
     SidebarHeader,
 } from "@/components/ui/sidebar";
-import { BookOpenText, Chat, FileText, ShareNetwork, User } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenText, Chat, FadersHorizontalIcon, ShareNetwork, User } from "@phosphor-icons/react/dist/ssr";
 
 export function AppSidebar() {
     const { id: projectId } = useParams();
-    
+    const pathname = usePathname();
+
+    const isActive = (href: string) => {
+        // Exact match or startsWith for subpages
+        if (href === `/projects/${projectId}`) {
+            return pathname === `/projects/${projectId}`;
+        }
+        return pathname.startsWith(href);
+    };
 
     return (
         <Sidebar>
@@ -38,59 +46,26 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarGroup>
                     {/* Selected: Sources */}
-                    <div className="mt-4 flex flex-col space-y-6">
+                    <div className="mt-4 flex flex-col items-center gap-4">
                         <Link
                             href={`/projects/${projectId}`}
-                            className="
-                                inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                bg-blue-50 text-blue-600
-                                rounded-xl
-                                "
+                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
                         >
                             <BookOpenText size={36} weight="regular" />
-                            <span className="text-sm font-semibold leading-none">
-                                Sources
-                            </span>
+                            <span className="text-sm leading-none">Sources</span>
                         </Link>
-
-                        {/* Tone */}
+                        {/* Configure */}
                         <Link
-                            href={`/projects/${projectId}/tone`}
-                            className="
-                                inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                text-gray-600 hover:bg-gray-100
-                                rounded-xl
-                            "
+                            href={`/projects/${projectId}/config`}
+                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}/config`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
                         >
-                            <FileText size={36} weight="regular" />
-                            <span className="text-sm leading-none">Tone</span>
+                            <FadersHorizontalIcon size={36} weight="regular" />
+                            <span className="text-sm leading-none">Configure</span>
                         </Link>
-
-                        {/* Chat */}
-                        <Link
-                            href={`/chat/${projectId}`}
-                            className="
-                                inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                text-gray-600 hover:bg-gray-100
-                                rounded-xl
-                            "
-                        >
-                            <Chat size={36} weight="regular" />
-                            <span className="text-sm leading-none">Chat</span>
-                        </Link>
-
                         {/* Share */}
                         <Link
                             href={`/projects/${projectId}/share`}
-                            className="
-                                inline-flex flex-col items-center gap-1
-                                px-3 py-2
-                                text-gray-600 hover:bg-gray-100
-                                rounded-xl
-                            "
+                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}/share`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
                         >
                             <ShareNetwork size={36} weight="regular" />
                             <span className="text-sm leading-none">Share</span>
@@ -104,12 +79,7 @@ export function AppSidebar() {
                 <div className="mt-4 flex flex-col space-y-6">
                     <Link
                         href="/profile"
-                        className="
-                            inline-flex flex-col items-center gap-1
-                            px-3 py-2
-                            text-gray-600 hover:bg-gray-100
-                            rounded-xl
-                        "
+                        className="inline-flex flex-col items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-xl"
                     >
                         <User size={36} weight="regular" />
                         <span className="text-sm leading-none">Profile</span>

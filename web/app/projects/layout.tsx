@@ -3,9 +3,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import AuthSessionProvider from "@/components/AuthSessionProvider";
 
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/Sidebar";
-
 export interface IProject {
     id: string;
     title: string;
@@ -20,19 +17,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
 
     return (
-        <SidebarProvider>
-            <AppSidebar />
-            <main className="flex-grow h-screen flex flex-col p-4 sm:p-6 lg:p-8 pb-0">
-                <div className="flex md:hidden mb-4">
-                    <SidebarTrigger />
-                </div>
+        // OLD SIDEBAR LAYOUT
+        // <SidebarProvider>
+        //     <AppSidebar />
+        //     <main className="flex-grow h-screen flex flex-col p-4 sm:p-6 lg:p-8 pb-0">
+        //         <div className="flex md:hidden mb-4">
+        //             <SidebarTrigger />
+        //         </div>
 
-                {/* <DashboardHeader selectedProject={selectedProject} /> */}
+        //         {/* <DashboardHeader selectedProject={selectedProject} /> */}
 
-                <AuthSessionProvider>
-                    <div className="flex-1">{children}</div>
-                </AuthSessionProvider>
-            </main>
-        </SidebarProvider>
+        //         <AuthSessionProvider>
+        //             <div className="flex-1">{children}</div>
+        //         </AuthSessionProvider>
+        //     </main>
+        // </SidebarProvider>
+        <AuthSessionProvider>
+            {children}
+        </AuthSessionProvider>
     );
 }

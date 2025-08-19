@@ -10,7 +10,7 @@ import { NewProjectDialog } from "@/components/NewProjectDialog";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { MagnifyingGlass } from "@phosphor-icons/react";
+import { ArrowLeft, MagnifyingGlass } from "@phosphor-icons/react";
 import { DotsSix, Folder, DotsThreeVertical } from "@phosphor-icons/react";
 
 const ProjectsPage: React.FC = () => {
@@ -89,7 +89,14 @@ const ProjectsPage: React.FC = () => {
     return <div className="text-center text-gray-500">Loading projects...</div>;
 
   return (
-    <div className="mx-auto max-w-7xl flex flex-col gap-8">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 pb-0 flex flex-col gap-4">
+      <Link
+        href="/"
+        className="flex items-center gap-1 text-sm text-black hover:text-stone-800 transition-colors"
+      >
+        <ArrowLeft size={16} />
+        Back to Squawk
+      </Link>
       {/* Header */}
       <header className="flex items-center justify-between">
         <div className="inline-flex flex-col justify-center items-start gap-1">
@@ -251,9 +258,20 @@ const ProjectCard: React.FC<{
                     ref={menuRef}
                     className="absolute left-0 top-full mt-2 bg-white border border-gray-200 rounded shadow-lg p-2 z-20"
                   >
-                    <button className="flex items-center gap-1 group cursor-pointer p-1 rounded-md" onClick={e => { e.stopPropagation(); onDelete(); }}>
-                      <Trash2 size={18} className="text-black group-hover:text-red-500 transition-colors " />
-                      <div className="text-sm text-black group-hover:text-red-500 transition-colors">Delete</div>
+                    <button
+                      className="flex items-center gap-1 group cursor-pointer p-1 rounded-md"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete();
+                      }}
+                    >
+                      <Trash2
+                        size={18}
+                        className="text-black group-hover:text-red-500 transition-colors "
+                      />
+                      <div className="text-sm text-black group-hover:text-red-500 transition-colors">
+                        Delete
+                      </div>
                     </button>
                   </div>
                 )}

@@ -133,13 +133,13 @@ const DashboardPage: React.FC = () => {
 
     return (
         <div className="mx-auto max-w-7xl flex flex-col gap-4">
+            {/* Back button */}
             <Link href="/projects" className="flex items-center gap-1 text-sm text-black hover:text-stone-800 transition-colors">
                 <ArrowLeft size={16} />
                 Back
             </Link>
             {/* Header */}
             <header className="flex flex-col items-start gap-1 flex-shrink-0">
-                {/* Back button */}
                 {/* Project Title */}
                 <form
                     className="group relative flex items-center gap-2 cursor-pointer"
