@@ -1,5 +1,7 @@
+// app/(auth)/autherror/page.tsx
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -15,7 +17,7 @@ const errorMessages: Record<string, string> = {
   default: "Something went wrong during sign-in.",
 };
 
-export default function LoginPage() {
+function AuthErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const errorMessage = errorMessages[error ?? ""] || errorMessages.default;
@@ -33,11 +35,25 @@ export default function LoginPage() {
           </Alert>
         )}
 
-        {/* Insert your actual sign-in buttons here */}
-        <div className="pt-4">
-          {/* Example: <SignInWithGoogleButton /> */}
-        </div>
+        <div className="pt-4">{/* Sign-in buttons */}</div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="max-w-md w-full space-y-6 text-center">
+            <h1 className="text-2xl font-semibold">Sign In</h1>
+            <p>Loading…</p>
+          </div>
+        </div>
+      }
+    >
+      <AuthErrorContent />
+    </Suspense>
   );
 }

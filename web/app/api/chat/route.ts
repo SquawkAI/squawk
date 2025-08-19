@@ -2,8 +2,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
+import { authOptions } from "@/lib/auth";
 import { mintEmbeddingToken } from "@/lib/security";
 
 const CHAT_SERVICE = process.env.CHAT_SERVICE_URL
