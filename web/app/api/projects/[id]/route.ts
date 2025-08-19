@@ -34,8 +34,6 @@ export async function PUT(req: Request, ctx: any) {
     return NextResponse.json({ success: true });
 }
 
-
-
 export async function DELETE(_req: Request, ctx: any) {
     const raw = ctx?.params;
     const { id: projectId } =
@@ -48,6 +46,25 @@ export async function DELETE(_req: Request, ctx: any) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Delete all files inside `user-uploads/<projectId>/`
+    const { data: files, error: listError } = await supabase.storage
+        .from("user-uploads")
+        .list(projectId, { limit: 1000 }); // up to 1000 files
+
+    if (listError) {
+        console.error("Storage list error:", listError);
+        return NextResponse.json({ error: "Failed to list project files" }, { status: 500 });
+    }
+
+    if (files && files.length > 0) {
+        const paths = files.map((f) => `${projectId}/${f.name}`);
+        const { error: removeError } = await supabase.storage.from("user-uploads").remove(paths);
+        if (removeError) {
+            console.error("Storage remove error:", removeError);
+            return NextResponse.json({ error: "Failed to delete project files" }, { status: 500 });
+        }
     }
 
     const { error } = await supabase
