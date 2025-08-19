@@ -89,7 +89,7 @@ const ProjectsPage: React.FC = () => {
     return <div className="text-center text-gray-500">Loading projects...</div>;
 
   return (
-    <div className="mx-auto max-w-7xl p-4 flex flex-col gap-8">
+    <div className="mx-auto max-w-7xl flex flex-col gap-8">
       {/* Header */}
       <header className="flex items-center justify-between">
         <div className="inline-flex flex-col justify-center items-start gap-1">

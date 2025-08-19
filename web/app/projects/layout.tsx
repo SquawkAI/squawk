@@ -30,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 {/* <DashboardHeader selectedProject={selectedProject} /> */}
 
                 <AuthSessionProvider>
-                    <div className="flex-1 overflow-hidden">{children}</div>
+                    <div className="flex-1">{children}</div>
                 </AuthSessionProvider>
             </main>
         </SidebarProvider>

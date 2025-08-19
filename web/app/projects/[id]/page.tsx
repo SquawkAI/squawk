@@ -132,7 +132,7 @@ const DashboardPage: React.FC = () => {
     );
 
     return (
-        <div className="mx-auto max-w-7xl p-4 flex flex-col gap-4">
+        <div className="mx-auto max-w-7xl flex flex-col gap-4">
             <Link href="/projects" className="flex items-center gap-1 text-sm text-black hover:text-stone-800 transition-colors">
                 <ArrowLeft size={16} />
                 Back
