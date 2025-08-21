@@ -14,10 +14,8 @@ import { supabaseClient } from "@/lib/supabase";
 import { IProject } from "../layout";
 
 import { FolderSimple, WarningCircle, Spinner, PencilSimpleIcon, MagnifyingGlass, ArrowLeft } from "@phosphor-icons/react";
-import { Input } from "@/components/ui/input";
 import { FileUpload } from "@/components/FileUpload";
 import { FilesTable } from "@/components/FilesTable";
-import { Button } from "@/components/ui/button";
 
 export interface IFileItem {
     id: string;

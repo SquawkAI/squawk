@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
 
 import { IProject } from "./layout";
@@ -10,8 +9,8 @@ import { NewProjectDialog } from "@/components/NewProjectDialog";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { ArrowLeft, MagnifyingGlass } from "@phosphor-icons/react";
-import { DotsSix, Folder, DotsThreeVertical } from "@phosphor-icons/react";
+import {  MagnifyingGlass } from "@phosphor-icons/react";
+import { DotsThreeVertical } from "@phosphor-icons/react";
 
 const ProjectsPage: React.FC = () => {
   const router = useRouter();
@@ -90,13 +89,7 @@ const ProjectsPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 pb-0 flex flex-col gap-4">
-      <Link
-        href="/"
-        className="flex items-center gap-1 text-sm text-black hover:text-stone-800 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Back to Squawk
-      </Link>
+      
       {/* Header */}
       <header className="flex items-center justify-between">
         <div className="inline-flex flex-col justify-center items-start gap-1">
