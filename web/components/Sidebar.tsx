@@ -10,7 +10,7 @@ import {
     SidebarGroup,
     SidebarHeader,
 } from "@/components/ui/sidebar";
-import { BookOpenText, Chat, FadersHorizontalIcon, ShareNetwork, User } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenText, FadersHorizontalIcon, Folders, ShareNetwork, User } from "@phosphor-icons/react/dist/ssr";
 
 export function AppSidebar() {
     const { id: projectId } = useParams();
@@ -44,7 +44,18 @@ export function AppSidebar() {
 
             {/* Menu */}
             <SidebarContent>
-                <SidebarGroup>
+                {pathname === "/projects" ? <SidebarGroup>
+                    {/* Selected: Sources */}
+                    <div className="mt-4 flex flex-col items-center gap-4">
+                        <Link
+                            href={`/projects/${projectId}`}
+                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
+                        >
+                            <Folders size={32} weight="regular" />
+                            <span className="text-sm leading-none">Projects</span>
+                        </Link>
+                    </div>
+                </SidebarGroup> : <SidebarGroup>
                     {/* Selected: Sources */}
                     <div className="mt-4 flex flex-col items-center gap-4">
                         <Link
@@ -71,7 +82,7 @@ export function AppSidebar() {
                             <span className="text-sm leading-none">Share</span>
                         </Link>
                     </div>
-                </SidebarGroup>
+                </SidebarGroup>}
             </SidebarContent>
 
             {/* Profile icon pinned at bottom */}
