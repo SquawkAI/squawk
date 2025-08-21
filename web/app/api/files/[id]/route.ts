@@ -1,16 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// app/api/files/[id]/route.ts
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, ctx: any) {
+  // params can be a Promise in Next 15
+  const raw = ctx?.params;
+  const { id: fileId } = (typeof raw?.then === "function" ? await raw : raw) ?? {};
+
+  if (!fileId) {
+    return NextResponse.json({ error: "Missing :id" }, { status: 400 });
+  }
+
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const { id: fileId } = params;
 
     // Fetch file metadata
     const { data: fileRecord, error: fetchError } = await supabase
@@ -21,11 +29,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       .single();
 
     if (fetchError || !fileRecord) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 }
-      );
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // Delete file from Supabase Storage
+    // Delete from storage
     const { error: storageError } = await supabase.storage
       .from("user-uploads")
       .remove([fileRecord.storage_path]);
@@ -38,6 +45,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       );
     }
 
+    // Delete DB row
     const { error: dbError } = await supabase
       .from("files")
       .delete()
@@ -54,9 +62,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     return NextResponse.json({ message: "File deleted successfully" });
   } catch (error) {
     console.error("Delete error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

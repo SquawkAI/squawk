@@ -86,12 +86,12 @@ const Message: React.FC<MessageProps> = ({ role, content }) => {
                             remarkPlugins={[remarkGfm, remarkBreaks]} // ← remove remarkBreaks to avoid odd line wrapping
                             components={{
                                 // Do NOT override <pre>; let SyntaxHighlighter own the block wrapper.
-                                code({ inline, className, children, ...props }) {
+                            code({ className, children, ...props }) {
                                     const m = /language-([\w+-]+)/i.exec(className || "");
-                                    let lang = normalizeLang(m?.[1] || "");
+                                    const lang = normalizeLang(m?.[1] || "");
 
                                     // Inline or no language → simple inline <code>
-                                    if (inline || !lang) {
+                                    if (!lang) {
                                         return (
                                             <code
                                                 className="px-1.5 py-0.5 rounded bg-neutral-100 font-mono text-[0.9em]"
@@ -106,6 +106,8 @@ const Message: React.FC<MessageProps> = ({ role, content }) => {
                                     return (
                                         <SyntaxHighlighter
                                             language={lang}
+
+                                            // @ts-expect-error Syntax highlighter style override
                                             style={prism as unknown as { [k: string]: React.CSSProperties }}
                                             PreTag="div"
                                             customStyle={{

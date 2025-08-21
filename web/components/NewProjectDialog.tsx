@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+import { parseError } from "@/lib/utils";
+
 type NewProjectValues = { title: string; description?: string }
 type Props = {
   open?: boolean
@@ -37,28 +39,22 @@ export function NewProjectDialog({ open, onOpenChange, onCreate, trigger, defaul
   const submitting = form.formState.isSubmitting || !!isSubmittingExternally
 
   async function handleSubmit(values: NewProjectValues) {
-    setServerError(null)
+    setServerError(null);
 
     try {
       await onCreate({
         title: values.title.trim(),
         description: values.description?.trim(),
-      })
-      // success → close + reset
-      setOpen(false)
-      form.reset()
-    } catch (err) {
-      // Axios-style error message if available
-      const msg =
-        err?.response?.data?.error ||
-        err?.message ||
-        "We couldn’t create your project. Please try again."
+      });
+      setOpen(false);
+      form.reset();
+    } catch (e: unknown) {
+      const { message, status } = parseError(e);
 
-      // If API validated title/name, surface it on the field
-      if (err?.response?.status === 400) {
-        form.setError("title", { type: "server", message: msg })
+      if (status === 400) {
+        form.setError("title", { type: "server", message });
       } else {
-        setServerError(msg)
+        setServerError(message);
       }
     }
   }
