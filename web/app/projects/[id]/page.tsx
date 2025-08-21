@@ -13,11 +13,9 @@ import { supabaseClient } from "@/lib/supabase";
 
 import { IProject } from "../layout";
 
-import { FolderSimple, WarningCircle, Spinner, PencilSimpleIcon } from "@phosphor-icons/react";
-import { Input } from "@/components/ui/input";
+import { FolderSimple, WarningCircle, Spinner, PencilSimpleIcon, MagnifyingGlass, ArrowLeft } from "@phosphor-icons/react";
 import { FileUpload } from "@/components/FileUpload";
 import { FilesTable } from "@/components/FilesTable";
-import { Button } from "@/components/ui/button";
 
 export interface IFileItem {
     id: string;
@@ -29,7 +27,7 @@ export interface IFileItem {
 }
 
 const nameFormSchema = z.object({
-    title: z.string().min(1, "Project title cannot be empty").max(20, "Project title must be less than 20 characters")
+    title: z.string().min(1, "Project title cannot be empty").max(20, "Project title must be less than 20 characters"),
 });
 
 const PreviewPlaceholder = ({ icon, title, message }: { icon: ReactNode, title: string, message: string }) => (
@@ -59,7 +57,7 @@ const DashboardPage: React.FC = () => {
     const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<z.infer<typeof nameFormSchema>>({
         resolver: zodResolver(nameFormSchema),
         defaultValues: {
-            title: project?.title,
+            title: project?.title ?? '',
         },
     });
     const title = watch("title");
@@ -72,13 +70,12 @@ const DashboardPage: React.FC = () => {
     
     useEffect(() => {
         if (project) {
-            reset({ title: project.title });
+            reset({ title: project.title});
         }
     }, [project, reset]);
 
     const onSubmit = (data: z.infer<typeof nameFormSchema>) => {
         setIsEditing(false);
-
         mutateProject(
             async (currentData: IProject | undefined) => {
                 const res = await fetch(`/api/projects/${project?.id}`, {
@@ -86,13 +83,11 @@ const DashboardPage: React.FC = () => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ title: data.title }),
                 });
-
                 if (!res.ok) {
                     throw new Error("Failed to update");
                 }
-
                 return {
-                    ...(currentData || {}), // fallback to empty object
+                    ...(currentData || {}),
                     title: data.title,
                 } as IProject;
             },
@@ -135,8 +130,15 @@ const DashboardPage: React.FC = () => {
     );
 
     return (
-        <>
-            <header className="flex items-center justify-between gap-4 mb-12 flex-shrink-0">
+        <div className="mx-auto max-w-7xl flex flex-col gap-4">
+            {/* Back button */}
+            <Link href="/projects" className="flex items-center gap-1 text-sm text-black hover:text-stone-800 transition-colors">
+                <ArrowLeft size={16} />
+                Back
+            </Link>
+            {/* Header */}
+            <header className="flex flex-col items-start gap-1 flex-shrink-0">
+                {/* Project Title */}
                 <form
                     className="group relative flex items-center gap-2 cursor-pointer"
                     onClick={() => setIsEditing(true)}
@@ -146,26 +148,25 @@ const DashboardPage: React.FC = () => {
                         <div>
                             <input
                                 {...register("title")}
-                                ref={(e) => {
+                                ref={e => {
                                     register("title").ref(e);
                                     inputRef.current = e;
                                 }}
                                 onBlur={handleSubmit(onSubmit)}
-                                onKeyDown={(e) => {
+                                onKeyDown={e => {
                                     if (e.key === "Enter") {
                                         e.preventDefault();
                                         handleSubmit(onSubmit)();
                                     }
                                 }}
-                                className={`text-2xl sm:text-3xl lg:text-4xl font-bold bg-transparent border-0 border-b transition-colors w-fit focus:outline-none ${errors.title ? "border-red-400" : "border-gray-300 focus:border-gray-400"
-                                    }`}
+                                className={`text-3xl font-bold bg-transparent border-0 border-b transition-colors w-fit focus:outline-none ${errors.title ? "border-red-400" : "border-gray-300 focus:border-gray-400"}`}
                             />
                             {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
                         </div>
                     ) : (
                         <div>
                             <div className="flex items-center gap-2">
-                                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold relative after:absolute after:left-0 after:-bottom-1 after:w-full after:h-[1px] after:bg-gray-300 after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform after:origin-left">
+                                <h1 className="text-3xl font-bold relative after:absolute after:left-0 after:-bottom-1 after:w-full after:h-[1px] after:bg-gray-300 after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform after:origin-left">
                                     {title}
                                 </h1>
                                 <PencilSimpleIcon className="w-5 h-5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -174,42 +175,44 @@ const DashboardPage: React.FC = () => {
                         </div>
                     )}
                 </form>
-
-                <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-10">
-                    <Link className="text-base font-medium" href="/projects">My projects</Link>
-                    <Button>+ New Project</Button>
+                {/* Project Description (static) */}
+                <div className="text-stone-600 text-md">
+                    {project?.description || "No description provided"}
                 </div>
             </header>
-
-            <div className="flex h-full gap-8">
+            {/* Main content */}
+            <div className="flex flex-1 gap-8">
                 {/* Left half */}
-                <div className="w-1/2 space-y-6 overflow-y-auto">
+                <div className="flex flex-col gap-4 w-1/2 overflow-y-auto">
                     {/* Title + Search */}
-                    <div className="space-y-4">
-                        <h1 className="text-3xl font-semibold">Sources</h1>
-                        <Input
+                    <h2 className="text-lg font-semibold">Sources</h2>
+                    <div className="relative">
+                        <input
+                            type="search"
                             placeholder="Search your sources"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            className="flex w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                        />
+                        <MagnifyingGlass
+                            size={18}
+                            weight="bold"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
                         />
                     </div>
-
                     {/* Upload area */}
                     {project?.id && (<FileUpload onUploadSuccess={handleUploadSuccess} projectId={project.id} />)}
-
                     {/* Sources table */}
                     {project?.id && (
                         <FilesTable
                             refreshTrigger={refreshTrigger}
                             projectId={project?.id}
                             searchTerm={searchTerm}
-
                             selectedDoc={selectedDoc}
                             setSelectedDoc={setSelectedDoc}
                         />
                     )}
                 </div>
-
                 {/* Right half */}
                 <div className="w-1/2 flex items-center justify-center">
                     {fetchPreviewLinkLoading ? (
@@ -241,7 +244,7 @@ const DashboardPage: React.FC = () => {
                     )}
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 

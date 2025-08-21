@@ -1,10 +1,9 @@
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/Sidebar";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AuthSessionProvider from "@/components/AuthSessionProvider";
-
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/Sidebar";
 
 export interface IProject {
     id: string;
@@ -30,7 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 {/* <DashboardHeader selectedProject={selectedProject} /> */}
 
                 <AuthSessionProvider>
-                    <div className="flex-1 overflow-hidden">{children}</div>
+                    <div className="flex-1">{children}</div>
                 </AuthSessionProvider>
             </main>
         </SidebarProvider>

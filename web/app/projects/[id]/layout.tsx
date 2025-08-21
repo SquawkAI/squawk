@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect /* or notFound */ } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import AuthSessionProvider from "@/components/AuthSessionProvider";
 
 export default async function Layout({
     children,
@@ -31,5 +33,16 @@ export default async function Layout({
         redirect("/signin");
     }
 
-    return <>{children}</>;
+    return (
+        <SidebarProvider>
+            <main className="flex-grow h-screen flex flex-col p-4 sm:p-6 lg:p-8 pb-0">
+                <div className="flex md:hidden mb-4">
+                    <SidebarTrigger />
+                </div>
+                <AuthSessionProvider>
+                    <div className="flex-1">{children}</div>
+                </AuthSessionProvider>
+            </main>
+        </SidebarProvider>
+    );
 }
