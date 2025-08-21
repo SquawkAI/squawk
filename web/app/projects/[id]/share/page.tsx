@@ -2,19 +2,12 @@
 
 import React, { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import {
-  Copy,
-  CheckCircle,
-  CodeSimple,
-} from "@phosphor-icons/react/dist/ssr";
+import { Copy, CheckCircle, CodeSimple } from "@phosphor-icons/react/dist/ssr";
 
 const SharePage = () => {
   const { id: projectId } = useParams() as { id: string };
-  const baseURL = process.env.NEXT_PUBLIC_BASE_URL
-  const shareUrl = useMemo(
-    () => `${baseURL}/chat/${projectId}`,
-    [baseURL, projectId]
-  );
+  const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
+  const shareUrl = useMemo(() => `${baseURL}/chat/${projectId}`, [baseURL, projectId]);
 
   // Slider-controlled dimensions (pixels)
   const [w, setW] = useState(600);
@@ -32,12 +25,11 @@ const SharePage = () => {
       await navigator.clipboard.writeText(text);
       setCopied(which);
       setTimeout(() => setCopied(null), 1200);
-    } catch { }
+    } catch {}
   };
 
   return (
     <div className="mx-auto max-w-7xl min-h-[100dvh] flex flex-col gap-4 px-4 sm:px-6 lg:px-8 py-4">
-
       {/* Header */}
       <header>
         <h1 className="text-3xl font-bold leading-tight">Share</h1>
@@ -74,12 +66,38 @@ const SharePage = () => {
             </div>
           </div>
 
-          {/* Embed code + sliders */}
+          {/* Embed code, then sliders underneath */}
           <div>
             <div className="text-lg font-semibold mb-2">Embed Code</div>
 
-            {/* Sliders */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+            {/* Code box + copy */}
+            <div className="flex items-stretch gap-2">
+              <textarea
+                readOnly
+                value={embedCode}
+                rows={3}
+                className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-stone-300 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => onCopy(embedCode, "embed")}
+                className="inline-flex items-center gap-1 rounded-md border border-stone-200 px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50 active:bg-stone-100"
+                aria-label="Copy embed code"
+              >
+                {copied === "embed" ? (
+                  <>
+                    <CheckCircle size={18} /> Copied
+                  </>
+                ) : (
+                  <>
+                    <CodeSimple size={18} /> Copy
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Sliders UNDER the embed textarea */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
               <div>
                 <label className="flex justify-between text-xs text-stone-600 mb-1">
                   <span>Width</span>
@@ -114,34 +132,8 @@ const SharePage = () => {
               </div>
             </div>
 
-            {/* Code box + copy */}
-            <div className="flex items-stretch gap-2">
-              <textarea
-                readOnly
-                value={embedCode}
-                rows={3}
-                className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-stone-300 font-mono"
-              />
-              <button
-                type="button"
-                onClick={() => onCopy(embedCode, "embed")}
-                className="inline-flex items-center gap-1 rounded-md border border-stone-200 px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50 active:bg-stone-100"
-                aria-label="Copy embed code"
-              >
-                {copied === "embed" ? (
-                  <>
-                    <CheckCircle size={18} /> Copied
-                  </>
-                ) : (
-                  <>
-                    <CodeSimple size={18} /> Copy
-                  </>
-                )}
-              </button>
-            </div>
-
             <p className="mt-2 text-xs text-stone-500">
-              Paste this snippet into your site. The sliders change the
+              Paste this snippet into your site. The sliders below change the
               <code className="mx-1 rounded bg-stone-100 px-1">width</code> and
               <code className="mx-1 rounded bg-stone-100 px-1">height</code> in
               pixels and the preview updates live.
