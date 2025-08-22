@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  chunk-embed:
+    build:
+      context: ./chunk-embed
+    ports:
+      - "8000:8000"
+    container_name: squawk-chunk-embed
+    env_file:
+      - ./chunk-embed/.env  
+  chat:
+    build:
+      context: ./chat
+    ports:
+      - "8080:8000"
+    container_name: squawk-chat
+    env_file:
+      - ./chat/.env 
