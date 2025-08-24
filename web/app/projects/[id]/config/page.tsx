@@ -1,179 +1,210 @@
-import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
-import React from "react";
+import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 
-const ConfigPage = () => {
+type Choice = { key: string; title: string; desc: string; icon?: string };
+
+const toneChoices: Choice[] = [
+  { key: "formal", title: "Formal", desc: "Structured, precise, and professional. Good for academic, legal, or business contexts.", icon: "📘" },
+  { key: "neutral", title: "Neutral", desc: "Clear and balanced; avoids emotional phrasing. Good for general communication.", icon: "⚖️" },
+  { key: "informal", title: "Informal", desc: "Relaxed and conversational; approachable and friendly.", icon: "💬" },
+];
+
+const complexityChoices: Choice[] = [
+  { key: "intro", title: "Introductory", desc: "Simplifies ideas with minimal jargon. Best for beginners.", icon: "🌱" },
+  { key: "intermediate", title: "Intermediate", desc: "Moderate detail with some technical terms.", icon: "🧩" },
+  { key: "advanced", title: "Advanced", desc: "High detail; assumes strong subject knowledge.", icon: "🧠" },
+];
+
+const detailChoices: Choice[] = [
+  { key: "direct", title: "Direct", desc: "Short answers with minimal extra detail. Great for quick decisions.", icon: "⚡" },
+  { key: "default", title: "Default", desc: "Balanced detail with moderate explanation.", icon: "📄" },
+  { key: "explanatory", title: "Explanatory", desc: "Adds context, reasoning, and background.", icon: "🔎" },
+];
+
+const authorityChoices: Choice[] = [
+  { key: "supportive", title: "Supportive", desc: "Encouraging and positive; good for coaching or mentoring.", icon: "🤝" },
+  { key: "neutral", title: "Default", desc: "Neutral tone with balanced authority and warmth.", icon: "🎛️" },
+  { key: "authoritative", title: "Authoritative", desc: "Confident, directive, and prescriptive guidance.", icon: "🛡️" },
+];
+
+function OptionCard({
+  item,
+  selected,
+  onSelect,
+}: {
+  item: Choice;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   return (
-    <div className="mx-auto max-w-7xl flex flex-col gap-4">
-      <Link
-        href="/projects"
-        className="flex items-center gap-1 text-sm text-black hover:text-stone-800 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Back
-      </Link>
-      <header className="flex items-center justify-between">
-        <div className="inline-flex flex-col justify-center items-start gap-1">
-          <div className="text-3xl font-bold">Configure</div>
-          <div className="text-stone-600 text-md">
-            Update chat settings and tone
+    <button
+      type="button"
+      onClick={onSelect}
+      className={[
+        "w-full text-left rounded-xl p-4 md:p-5 transition",
+        "bg-white ring-1 ring-stone-200 hover:ring-stone-300",
+        selected ? "ring-2 ring-blue-500 shadow-sm bg-blue-50/40" : "",
+      ].join(" ")}
+    >
+      <div className="flex items-start gap-3">
+        {item.icon ? (
+          <div className="h-9 w-9 flex items-center justify-center rounded-full bg-stone-100 text-lg">
+            {item.icon}
+          </div>
+        ) : null}
+        <div>
+          <div className="text-sm font-semibold text-stone-900">{item.title}</div>
+          <div className="mt-1 text-xs md:text-[13px] leading-5 text-stone-600">
+            {item.desc}
           </div>
         </div>
-      </header>
+      </div>
+    </button>
+  );
+}
 
-      <section className="flex flex-1 gap-8 h-full pb-4">
-        <div className="flex flex-col gap-4 w-1/2 h-full">
-          {/* Section: Tone */}
-          <div className="flex flex-col">
-            <div className="text-lg font-semibold">Tone</div>
-            <div className="flex flex-row gap-2">
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Formal</div>
-                <div className="text-xs text-stone-600">
-                  Structured, precise, and professional wording. Best for
-                  academic, legal, or business contexts.
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Neutral</div>
-                <div className="text-xs text-stone-600">
-                  Clear and balanced; avoids emotional or casual phrasing. Best
-                  for general, objective communication.
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Informal</div>
-                <div className="text-xs text-stone-600">
-                  Relaxed and conversational; approachable, friendly tone. Best
-                  for everyday conversations.
-                </div>
-              </div>
-            </div>
+export default function ConfigPage() {
+  const [tone, setTone] = useState("neutral");
+  const [complexity, setComplexity] = useState("intermediate");
+  const [detail, setDetail] = useState("default");
+  const [authority, setAuthority] = useState("neutral");
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Top bar */}
+      <div className="mx-auto max-w-7xl px-6 md:px-8 lg:px-10 pt-6">
+        <Link
+          href="/projects"
+          className="inline-flex items-center gap-1 text-sm text-stone-700 hover:text-stone-900 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Back
+        </Link>
+        <header className="mt-4 flex items-end justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-stone-900">Configure</h1>
+            <p className="mt-1 text-stone-600">Update chat settings and tone</p>
           </div>
-          {/* Section: Complexity */}
-          <div className="flex flex-col">
-            <div className="text-lg font-semibold">Complexity</div>
-            <div className="flex flex-row gap-2">
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Introductory</div>
-                <div className="text-xs text-stone-600">
-                  Simplifies ideas, uses basic vocabulary, minimal jargon. Best
-                  for beginners or general audiences.
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Intermediate</div>
-                <div className="text-xs text-stone-600">
-                  Moderate detail with some technical or domain-specific terms.
-                  Best for learners with some prior knowledge.
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Advanced</div>
-                <div className="text-xs text-stone-600">
-                  High-level detail, assumes strong subject knowledge. Best for
-                  specialists or expert audiences.
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Section: Style - Detail */}
-          <div className="flex flex-col">
-            <div className="text-lg font-semibold">Style – Detail</div>
-            <div className="flex flex-row gap-2">
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Direct</div>
-                <div className="text-xs text-stone-600">
-                  Short, concise answers with minimal extra detail. Best for
-                  quick responses and fast decision-making.
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Default</div>
-                <div className="text-xs text-stone-600">
-                  Balanced level of detail with moderate explanation. Best for
-                  most situations where clarity and brevity are both important.
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Explanatory</div>
-                <div className="text-xs text-stone-600">
-                  Adds context, reasoning, and background information. Best for
-                  teaching, clarifying, or expanding on ideas.
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Section: Style - Authority */}
-          <div className="flex flex-col">
-            <div className="text-lg font-semibold">Style – Authority</div>
-            <div className="flex flex-row gap-2">
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Supportive</div>
-                <div className="text-xs text-stone-600">
-                  Encouraging and positive, with emphasis on reassurance. Best
-                  for coaching, mentoring, or motivating users.
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Default</div>
-                <div className="text-xs text-stone-600">
-                  Neutral tone with balanced authority and warmth. Best for
-                  general communication where tonal flexibility is needed.
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-1 border border-stone-200 rounded-md p-2 cursor-pointer">
-                <div className="text-sm font-medium">Authoritative</div>
-                <div className="text-xs text-stone-600">
-                  Confident, directive, and prescriptive in guidance. Best for
-                  rules, instructions, or expert opinions.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col w-1/2 overflow-y-auto">
-          <div className="text-lg font-semibold">Prompt Preview</div>
-          <div className="flex w-full border border-stone-200 rounded-md p-2 text-sm text-stone-600">
+        </header>
+      </div>
+
+      {/* Content */}
+      <section className="mx-auto max-w-7xl px-6 md:px-8 lg:px-10 py-6 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Left: Controls */}
+          <div className="flex flex-col gap-8">
+            {/* Tone */}
             <div>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla non
-              eleifend arcu, quis luctus sapien. Aliquam venenatis dui ac
-              bibendum fermentum. Nulla enim velit, lobortis eget lorem sed,
-              tincidunt pretium lacus. Mauris rutrum dui nec quam venenatis, sit
-              amet accumsan ipsum gravida. Nulla nec venenatis ligula, at porta
-              risus. Nunc nec est feugiat, condimentum ipsum ac, elementum odio.
-              Integer eu sagittis libero, sed interdum velit. In ultricies
-              efficitur enim a vestibulum. Nam vestibulum viverra metus, sed
-              pharetra turpis consequat id. Maecenas dapibus, lacus ac gravida
-              cursus, augue enim semper dolor, ut blandit sem mauris quis
-              turpis. Aliquam metus ante, volutpat ut fringilla ac, finibus eu
-              neque. Sed id lacus libero. Nam sodales condimentum ligula eget
-              aliquet. Vestibulum eleifend lacus et semper fermentum. Sed ut
-              ipsum nulla. Phasellus interdum tempor magna sed pellentesque.
-              Duis nibh augue, varius et purus sed, rutrum cursus magna. Morbi
-              at libero leo. Aliquam in dolor placerat, mattis eros ut,
-              hendrerit purus. Vestibulum nec sem felis. Etiam pretium augue sit
-              amet tincidunt eleifend. Sed nulla odio, accumsan eget eros vel,
-              lacinia congue mi. Vivamus commodo nisl sed elit blandit faucibus.
-              Nunc quis eros ut lacus rhoncus iaculis. Donec rhoncus tortor id
-              lectus imperdiet feugiat. Aenean gravida, sapien scelerisque
-              blandit pellentesque, elit quam ornare lorem, et interdum ante
-              nibh quis dui. Vestibulum consectetur lectus eu sem auctor, vitae
-              consequat ante interdum. Integer tincidunt, lacus id pharetra
-              volutpat, est leo faucibus turpis, ut vehicula justo nisi ut
-              libero. Donec blandit lacinia tempus. Nam faucibus tellus ut
-              luctus vestibulum. Morbi volutpat elit ac risus tristique, nec
-              maximus enim aliquam. Nulla facilisi. Aliquam erat volutpat.
-              Vivamus a mi magna. Sed luctus bibendum risus vitae efficitur.
-              Duis vitae neque vel arcu gravida commodo sit amet a nisi. Nunc
-              ultricies convallis lorem eu dignissim. Ut dictum a augue et
-              commodo.
+              <h2 className="text-lg font-semibold text-stone-900">Tone</h2>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {toneChoices.map((c) => (
+                  <OptionCard
+                    key={c.key}
+                    item={c}
+                    selected={tone === c.key}
+                    onSelect={() => setTone(c.key)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Complexity */}
+            <div>
+              <h2 className="text-lg font-semibold text-stone-900">Complexity</h2>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {complexityChoices.map((c) => (
+                  <OptionCard
+                    key={c.key}
+                    item={c}
+                    selected={complexity === c.key}
+                    onSelect={() => setComplexity(c.key)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Style – Detail */}
+            <div>
+              <h2 className="text-lg font-semibold text-stone-900">Style – Detail</h2>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {detailChoices.map((c) => (
+                  <OptionCard
+                    key={c.key}
+                    item={c}
+                    selected={detail === c.key}
+                    onSelect={() => setDetail(c.key)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Style – Authority */}
+            <div>
+              <h2 className="text-lg font-semibold text-stone-900">Style – Authority</h2>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {authorityChoices.map((c) => (
+                  <OptionCard
+                    key={c.key}
+                    item={c}
+                    selected={authority === c.key}
+                    onSelect={() => setAuthority(c.key)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Right: Preview */}
+          <aside className="lg:sticky lg:top-6 h-fit">
+            <div>
+              <h2 className="text-lg font-semibold text-stone-900">Prompt Preview</h2>
+              <div className="text-xs text-stone-500">
+                Tone: <span className="font-medium">{tone}</span> · Complexity:{" "}
+                <span className="font-medium">{complexity}</span> · Detail:{" "}
+                <span className="font-medium">{detail}</span> · Authority:{" "}
+                <span className="font-medium">{authority}</span>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-xl bg-white ring-1 ring-stone-200 shadow-sm p-5">
+              <div className="prose prose-stone max-w-none">
+                <p className="text-sm leading-7 text-stone-700">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla non
+                  eleifend arcu, quis luctus sapien. Aliquam venenatis dui ac bibendum
+                  fermentum. Mauris rutrum dui nec quam venenatis, sit amet accumsan ipsum
+                  gravida. Integer eu sagittis libero, sed interdum velit. Nam sodales
+                  condimentum ligula eget aliquet. Vestibulum eleifend lacus et semper
+                  fermentum. Duis vitae neque vel arcu gravida commodo sit amet a nisi.
+                </p>
+                <p className="mt-4 text-sm leading-7 text-stone-700">
+                  Etiam pretium augue sit amet tincidunt eleifend. Donec rhoncus tortor id
+                  lectus imperdiet feugiat. Integer tincidunt, lacus id pharetra volutpat,
+                  est leo faucibus turpis, ut vehicula justo nisi ut libero.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        {/* Footer actions (optional) */}
+        <div className="mt-8 flex items-center justify-end gap-3">
+          <Link
+            href="/projects"
+            className="text-sm px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-50"
+          >
+            Cancel
+          </Link>
+          <button
+            className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+            onClick={() => alert("Settings saved")}
+          >
+            Save Settings
+          </button>
         </div>
       </section>
     </div>
   );
-};
-
-export default ConfigPage;
+}
