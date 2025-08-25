@@ -73,6 +73,7 @@ const DashboardPage: React.FC = () => {
       const res = await axios.get(`/api/projects/${projectId}`);
       return res.data;
     }
+
   );
 
   const {
@@ -124,6 +125,10 @@ const DashboardPage: React.FC = () => {
           title: data.title,
           description: project?.description ?? "",
           updated_at: new Date().toISOString(),
+          tone: 'neutral',
+          complexity: 'intermediate',
+          authority: 'default',
+          detail: 'default',
         },
         rollbackOnError: true,
         revalidate: false,

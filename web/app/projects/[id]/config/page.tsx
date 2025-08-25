@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import useSWR from "swr";
+import axios from "axios";
 import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+import { useParams } from "next/navigation";
+import { IProject } from "../../layout";
 
 type Choice = { key: string; title: string; desc: string; icon?: string };
 
@@ -43,12 +46,27 @@ function OptionCard({
     <button
       type="button"
       onClick={onSelect}
+      role="radio"
+      aria-checked={selected}
       className={[
-        "w-full text-left rounded-xl p-4 md:p-5 transition",
+        "relative w-full text-left rounded-xl p-4 md:p-5 transition",
         "bg-white ring-1 ring-stone-200 hover:ring-stone-300",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
         selected ? "ring-2 ring-blue-500 shadow-sm bg-blue-50/40" : "",
       ].join(" ")}
     >
+      {/* Check badge */}
+      <span
+        className={[
+          "absolute right-3 top-3 h-5 w-5 rounded-full text-[11px] font-bold",
+          "flex items-center justify-center transition-opacity",
+          selected ? "bg-blue-600 text-white opacity-100" : "bg-stone-200 text-stone-600 opacity-0 group-hover:opacity-60",
+        ].join(" ")}
+        aria-hidden="true"
+      >
+        ✓
+      </span>
+
       <div className="flex items-start gap-3">
         {item.icon ? (
           <div className="h-9 w-9 flex items-center justify-center rounded-full bg-stone-100 text-lg">
@@ -66,23 +84,31 @@ function OptionCard({
   );
 }
 
-export default function ConfigPage() {
-  const [tone, setTone] = useState("neutral");
-  const [complexity, setComplexity] = useState("intermediate");
-  const [detail, setDetail] = useState("default");
-  const [authority, setAuthority] = useState("neutral");
+const ConfigPage: React.FC = () => {
+  const { id: projectId } = useParams();
+
+  const { data: project } = useSWR<IProject>(
+    `/api/projects/${projectId}`,
+    async () => (await axios.get(`/api/projects/${projectId}`)).data
+  );
+
+  // Provide safe defaults; hydrate when project loads
+  const [tone, setTone] = useState<string>("neutral");
+  const [complexity, setComplexity] = useState<string>("intermediate");
+  const [detail, setDetail] = useState<string>("default");
+  const [authority, setAuthority] = useState<string>("neutral");
+
+  useEffect(() => {
+    if (!project) return;
+    setTone(project.tone ?? "neutral");
+    setComplexity(project.complexity ?? "intermediate");
+    setDetail(project.detail ?? "default");
+    setAuthority(project.authority ?? "neutral");
+  }, [project]);
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Top bar */}
       <div className="mx-auto max-w-7xl px-6 md:px-8 lg:px-10 pt-6">
-        <Link
-          href="/projects"
-          className="inline-flex items-center gap-1 text-sm text-stone-700 hover:text-stone-900 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back
-        </Link>
         <header className="mt-4 flex items-end justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-stone-900">Configure</h1>
@@ -91,13 +117,11 @@ export default function ConfigPage() {
         </header>
       </div>
 
-      {/* Content */}
       <section className="mx-auto max-w-7xl px-6 md:px-8 lg:px-10 py-6 md:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Left: Controls */}
+          {/* Left */}
           <div className="flex flex-col gap-8">
-            {/* Tone */}
-            <div>
+            <div role="radiogroup" aria-label="Tone">
               <h2 className="text-lg font-semibold text-stone-900">Tone</h2>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {toneChoices.map((c) => (
@@ -111,8 +135,7 @@ export default function ConfigPage() {
               </div>
             </div>
 
-            {/* Complexity */}
-            <div>
+            <div role="radiogroup" aria-label="Complexity">
               <h2 className="text-lg font-semibold text-stone-900">Complexity</h2>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {complexityChoices.map((c) => (
@@ -126,8 +149,7 @@ export default function ConfigPage() {
               </div>
             </div>
 
-            {/* Style – Detail */}
-            <div>
+            <div role="radiogroup" aria-label="Style – Detail">
               <h2 className="text-lg font-semibold text-stone-900">Style – Detail</h2>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {detailChoices.map((c) => (
@@ -141,8 +163,7 @@ export default function ConfigPage() {
               </div>
             </div>
 
-            {/* Style – Authority */}
-            <div>
+            <div role="radiogroup" aria-label="Style – Authority">
               <h2 className="text-lg font-semibold text-stone-900">Style – Authority</h2>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {authorityChoices.map((c) => (
@@ -170,26 +191,18 @@ export default function ConfigPage() {
             </div>
 
             <div className="mt-3 rounded-xl bg-white ring-1 ring-stone-200 shadow-sm p-5">
-              <div className="prose prose-stone max-w-none">
-                <p className="text-sm leading-7 text-stone-700">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla non
-                  eleifend arcu, quis luctus sapien. Aliquam venenatis dui ac bibendum
-                  fermentum. Mauris rutrum dui nec quam venenatis, sit amet accumsan ipsum
-                  gravida. Integer eu sagittis libero, sed interdum velit. Nam sodales
-                  condimentum ligula eget aliquet. Vestibulum eleifend lacus et semper
-                  fermentum. Duis vitae neque vel arcu gravida commodo sit amet a nisi.
-                </p>
-                <p className="mt-4 text-sm leading-7 text-stone-700">
-                  Etiam pretium augue sit amet tincidunt eleifend. Donec rhoncus tortor id
-                  lectus imperdiet feugiat. Integer tincidunt, lacus id pharetra volutpat,
-                  est leo faucibus turpis, ut vehicula justo nisi ut libero.
-                </p>
-              </div>
+              <p className="text-sm leading-7 text-stone-700">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla non eleifend arcu, quis luctus sapien.
+                Mauris rutrum dui nec quam venenatis, sit amet accumsan ipsum gravida. Integer eu sagittis libero.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-stone-700">
+                Etiam pretium augue sit amet tincidunt eleifend. Integer tincidunt, lacus id pharetra volutpat, est leo
+                faucibus turpis, ut vehicula justo nisi ut libero.
+              </p>
             </div>
           </aside>
         </div>
 
-        {/* Footer actions (optional) */}
         <div className="mt-8 flex items-center justify-end gap-3">
           <Link
             href="/projects"
@@ -207,4 +220,6 @@ export default function ConfigPage() {
       </section>
     </div>
   );
-}
+};
+
+export default ConfigPage;
