@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import useSWR from "swr";
 import axios from "axios";
 import Link from "next/link";
@@ -9,12 +9,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams } from "next/navigation";
 import { IProject } from "../../layout";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 type Choice = { key: string; title: string; desc: string; icon?: string };
 
 const ToneEnum = z.enum(["formal", "neutral", "informal"]);
-const ComplexityEnum = z.enum(["introductory", "intermediate", "advanced"]);
-const AuthorityEnum = z.enum(["supportive", "authoritative", "default"]);
+const ComplexityEnum = z.enum(["advanced", "intermediate", "introductory"]);
+const AuthorityEnum = z.enum(["authoritative", "default", "supportive"]);
 const DetailEnum = z.enum(["direct", "default", "explanatory"]);
 
 const configFormSchema = z.object({
@@ -128,7 +129,7 @@ function OptionCard({
 const ConfigPage: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
 
-  const { data: project } = useSWR<IProject>(
+  const { data: project, mutate: mutateProject } = useSWR<IProject>(
     projectId ? `/api/projects/${projectId}` : null,
     async (url: string) => (await axios.get(url)).data
   );
@@ -141,14 +142,11 @@ const ConfigPage: React.FC = () => {
     watch,
   } = useForm<ConfigForm>({
     resolver: zodResolver(configFormSchema),
-    defaultValues: {
-      title: "",
-      tone: "neutral",
-      complexity: "intermediate",
-      detail: "default",
-      authority: "default",
-    },
   });
+
+  // success/error UI state
+  const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [statusMsg, setStatusMsg] = useState<string>("");
 
   useEffect(() => {
     if (!project) return;
@@ -157,7 +155,7 @@ const ConfigPage: React.FC = () => {
       tone: (project.tone as ConfigForm["tone"]) ?? "neutral",
       complexity: (project.complexity as ConfigForm["complexity"]) ?? "intermediate",
       detail: (project.detail as ConfigForm["detail"]) ?? "default",
-      authority: (project.authority as ConfigForm["authority"]) ?? "default", // ✅ fixed (was "neutral")
+      authority: (project.authority as ConfigForm["authority"]) ?? "default",
     });
   }, [project, reset]);
 
@@ -166,8 +164,36 @@ const ConfigPage: React.FC = () => {
   const detail = watch("detail");
   const authority = watch("authority");
 
-  const onSubmit = (values: ConfigForm) => {
-    alert(`Settings saved:\n${JSON.stringify(values, null, 2)}`);
+  const onSubmit = async (values: ConfigForm) => {
+    try {
+      setStatus("saving");
+      setStatusMsg("");
+
+      const res = await fetch(`/api/projects/${projectId}/config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tone: values.tone,
+          complexity: values.complexity,
+          detail: values.detail,
+          authority: values.authority,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || "Failed to update settings");
+      }
+
+      // revalidate SWR cache
+      await mutateProject();
+
+      setStatus("success");
+      setStatusMsg("Settings saved successfully.");
+    } catch (e) {
+      setStatus("error");
+      setStatusMsg((e as Error)?.message || "Something went wrong while saving settings.");
+    }
   };
 
   return (
@@ -182,6 +208,33 @@ const ConfigPage: React.FC = () => {
       </div>
 
       <section className="mx-auto max-w-7xl px-6 md:px-8 lg:px-10 py-6 md:py-8">
+        {/* Alerts */}
+        {status === "success" && (
+          <Alert className="mb-4">
+            {/* simple inline check icon */}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <AlertTitle>Saved</AlertTitle>
+            <AlertDescription>
+              <p>{statusMsg || "Your configuration has been saved."}</p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {status === "error" && (
+          <Alert variant="destructive" className="mb-4">
+            {/* simple inline x icon */}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <AlertTitle>Couldn’t save</AlertTitle>
+            <AlertDescription>
+              <p>{statusMsg || "Please try again."}</p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             {/* Left */}
@@ -293,9 +346,13 @@ const ConfigPage: React.FC = () => {
             </Link>
             <button
               type="submit"
-              className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+              disabled={status === "saving"}
+              className={[
+                "text-sm px-4 py-2 rounded-lg text-white transition",
+                status === "saving" ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700",
+              ].join(" ")}
             >
-              Save Settings
+              {status === "saving" ? "Saving..." : "Save Settings"}
             </button>
           </div>
         </form>
