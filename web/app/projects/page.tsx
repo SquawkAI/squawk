@@ -24,7 +24,7 @@ const ProjectsPage: React.FC = () => {
     }
   );
 
-  const getLastOpened = (updatedAt: string) => {
+  const getLastUpdated = (updatedAt: string) => {
     const updatedDate = new Date(updatedAt);
     const now = new Date();
     const diffMs = now.getTime() - updatedDate.getTime();
@@ -143,7 +143,7 @@ const ProjectsPage: React.FC = () => {
                 key={p.id}
                 title={p.title}
                 description={p.description}
-                lastOpened={getLastOpened(p.updated_at)}
+                lastUpdated={getLastUpdated(p.updated_at)}
                 onOpen={() => router.push(`/projects/${p.id}`)}
                 onDelete={() => deleteProject(p.id)}
               />
@@ -159,10 +159,10 @@ const ProjectsPage: React.FC = () => {
 const ProjectCard: React.FC<{
   title: string;
   description?: string;
-  lastOpened: string;
+  lastUpdated: string;
   onOpen: () => void;
   onDelete: () => void;
-}> = ({ title, description, lastOpened, onOpen, onDelete }) => {
+}> = ({ title, description, lastUpdated, onOpen, onDelete }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -225,7 +225,7 @@ const ProjectCard: React.FC<{
           </div>
           <div className="relative w-full">
             <div className="text-sm text-stone-500/50 truncate max-w-xs">
-              Opened {lastOpened}
+              Updated {lastUpdated}
             </div>
             <div className="absolute right-0 top-0">
               <div className="relative inline-block">
