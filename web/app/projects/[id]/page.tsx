@@ -73,16 +73,9 @@ const DashboardPage: React.FC = () => {
       const res = await axios.get(`/api/projects/${projectId}`);
       return res.data;
     }
-
   );
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-    reset,
-  } = useForm<z.infer<typeof nameFormSchema>>({
+  const { register, handleSubmit, watch, formState: { errors }, reset, } = useForm<z.infer<typeof nameFormSchema>>({
     resolver: zodResolver(nameFormSchema),
     defaultValues: {
       title: project?.title ?? "",
