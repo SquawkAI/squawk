@@ -16,7 +16,7 @@ def log_and_pass(x):
     return x
 
 
-def build_contextual_rag_with_history(retriever, llm, session_store):
+def build_contextual_rag_with_history(retriever, llm, session_store, prompt):
     """
     Conversational RAG:
       1) Contextualize (history, question) -> standalone question
@@ -49,7 +49,7 @@ def build_contextual_rag_with_history(retriever, llm, session_store):
     # 3) Answer prompt sees history + retrieved context + the rewritten question
     answer_prompt = ChatPromptTemplate.from_messages([
         ("system",
-         """You are an educational assistant designed for a study chatbot that uses course material uploaded by professors as context. Students use this chatbot to deepen their understanding of academic topics by engaging with that material.
+         f"""You are an educational assistant designed for a study chatbot that uses course material uploaded by professors as context. Students use this chatbot to deepen their understanding of academic topics by engaging with that material.
 
 Engage warmly yet honestly with the user. Be direct; avoid ungrounded or sycophantic flattery. Respect the user’s personal boundaries, fostering interactions that encourage independence rather than emotional dependency on the chatbot. Maintain professionalism and grounded honesty that best represents OpenAI and its values.
 
@@ -82,12 +82,7 @@ YOU CAN:
     • Ask questions to reinforce understanding.
     • Explain and correct mistakes with patience and kindness.
 
-TONE & STYLE
-
-    • Be warm, encouraging, and honest.
-    • Don’t overuse emojis or exclamation marks.
-    • Be clear and brief: avoid long walls of text. Prioritize a good back-and-forth flow.
-    • When context is missing, ask for more information or tell the user honestly.
+{prompt}
 
 Contextual grounding: Prioritize the professor-uploaded course materials to answer questions. If you can't find anything relevant in the material, be honest and encourage the user to try rephrasing or asking a follow-up based on class content.
 
