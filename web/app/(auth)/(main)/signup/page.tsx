@@ -49,8 +49,7 @@ export default function SignIn() {
 
             <SignInWithGoogleButton onClick={handleGoogleSignIn} />
 
-            {/* ——— Form ——— */}
-            <Form {...form}>
+            {/* <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit((v) => onSubmit(v))}
                     className="space-y-6 px-2"
@@ -87,7 +86,6 @@ export default function SignIn() {
                         Sign Up
                     </Button>
 
-                    {/* Links */}
                     <div className="flex flex-col sm:flex-row justify-between text-sm">
                         <span className="mt-2 sm:mt-0">
                             Already have an account?
@@ -97,7 +95,7 @@ export default function SignIn() {
                         </span>
                     </div>
                 </form>
-            </Form>
+            </Form> */}
         </div>
     );
 }

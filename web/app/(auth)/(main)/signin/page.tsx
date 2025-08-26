@@ -49,8 +49,7 @@ export default function SignIn() {
 
             <SignInWithGoogleButton onClick={handleGoogleSignIn} />
 
-            {/* ——— Form ——— */}
-            <Form {...form}>
+            {/* <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit((v) => onSubmit(v))}
                     className="space-y-6 px-2"
@@ -87,7 +86,6 @@ export default function SignIn() {
                         Sign In
                     </Button>
 
-                    {/* Links */}
                     <div className="flex flex-col sm:flex-row justify-between text-sm">
                         <Link href="/forgotpassword" className="text-blue-600 hover:underline">
                             Forgot password?
@@ -100,7 +98,7 @@ export default function SignIn() {
                         </span>
                     </div>
                 </form>
-            </Form>
+            </Form> */}
         </div>
     );
 }
