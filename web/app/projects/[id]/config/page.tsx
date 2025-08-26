@@ -78,6 +78,60 @@ const authorityChoices: Choice[] = configFormSchema.shape.authority.options.map(
   icon: key === "supportive" ? "🤝" : key === "default" ? "🎛️" : "🛡️",
 }));
 
+function getPreview(s: { tone: z.infer<typeof ToneEnum>, complexity: z.infer<typeof ComplexityEnum>, detail: z.infer<typeof DetailEnum>, authority: z.infer<typeof AuthorityEnum> }): string {
+  // Core sentence varies mostly by complexity.
+  const lead =
+    s.complexity === "introductory"
+      ? "Quantum entanglement is when two tiny particles act like they're connected, so measuring one immediately tells you something about the other, even if they're far apart."
+      : s.complexity === "advanced"
+        ? "Quantum entanglement denotes non-classical correlations between subsystems of a shared wavefunction; a measurement on one subsystem instantaneously defines the correlated outcome of its partner, violating local hidden-variable models and formalized via Bell inequalities."
+        : "Quantum entanglement occurs when two or more particles share linked states so that measuring one instantly determines the other's outcome, regardless of distance.";
+
+  // Extra sentences vary by detail.
+  const detailAdditions =
+    s.detail === "direct"
+      ? "" // keep it tight
+      : s.detail === "default"
+        ? " This effect has been repeatedly verified in experiments and is central to quantum information science."
+        : " This counterintuitive effect has been confirmed in numerous experiments and underpins emerging technologies, including quantum key distribution and certain quantum computing protocols, where entanglement enables correlations that classical systems cannot reproduce.";
+
+  // Authority framing tweaks the “stance” language.
+  const authorityOpen =
+    s.authority === "supportive"
+      ? "Great question—"
+      : s.authority === "authoritative"
+        ? "Definitively,"
+        : ""; // default: no opener
+
+  const authorityClose =
+    s.authority === "supportive"
+      ? " If any part feels unclear, we can slow down and walk through a simple example together."
+      : s.authority === "authoritative"
+        ? " Treat this as a foundational fact when reasoning about quantum protocols."
+        : "";
+
+  // Tone polish swaps diction/register lightly (use replaceAll to avoid regex quirks).
+  const tonePolish = (text: string) => {
+    if (s.tone === "formal") {
+      return text
+        .replaceAll("tiny particles", "quantum particles")
+        .replaceAll("act like they're connected", "exhibit correlated states")
+        .replaceAll("far apart", "significant spatial separation");
+    }
+    if (s.tone === "informal") {
+      return text
+        .replaceAll("occurs when", "happens when")
+        .replaceAll("so that", "so that") // keep as-is; included for clarity if you tweak base text
+        .replaceAll("regardless of distance", "even across huge distances");
+    }
+    return text; // neutral
+  };
+
+  const base = `${authorityOpen ? authorityOpen + " " : ""}${lead}${detailAdditions}${authorityClose}`;
+  return tonePolish(base).trim();
+}
+
+
 function OptionCard({
   item,
   selected,
@@ -315,7 +369,7 @@ const ConfigPage: React.FC = () => {
             {/* Right: Preview */}
             <aside className="lg:sticky lg:top-6 h-fit">
               <div>
-                <h2 className="text-lg font-semibold text-stone-900">Prompt Preview</h2>
+                <h2 className="text-lg font-semibold text-stone-900">Preview</h2>
                 <div className="text-xs text-stone-500">
                   Tone: <span className="font-medium">{tone}</span> · Complexity:{" "}
                   <span className="font-medium">{complexity}</span> · Detail:{" "}
@@ -326,24 +380,14 @@ const ConfigPage: React.FC = () => {
 
               <div className="mt-3 rounded-xl bg-white ring-1 ring-stone-200 shadow-sm p-5">
                 <p className="text-sm leading-7 text-stone-700">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla non eleifend arcu, quis luctus sapien.
-                  Mauris rutrum dui nec quam venenatis, sit amet accumsan ipsum gravida. Integer eu sagittis libero.
+                  {getPreview({ tone, complexity, detail, authority })}
                 </p>
-                <p className="mt-4 text-sm leading-7 text-stone-700">
-                  Etiam pretium augue sit amet tincidunt eleifend. Integer tincidunt, lacus id pharetra volutpat, est leo
-                  faucibus turpis, ut vehicula justo nisi ut libero.
-                </p>
+
               </div>
             </aside>
           </div>
 
           <div className="mt-8 flex items-center justify-end gap-3">
-            <Link
-              href="/projects"
-              className="text-sm px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-50"
-            >
-              Cancel
-            </Link>
             <button
               type="submit"
               disabled={status === "saving"}
