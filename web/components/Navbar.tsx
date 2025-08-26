@@ -27,10 +27,10 @@ const Navbar: React.FC = () => {
                 </div>
 
                 <nav className="hidden lg:flex items-center gap-8 text-base font-medium">
-                    <Link href="#product" className="hover:text-blue-600">Product</Link>
-                    <Link href="#how_it_works" className="hover:text-blue-600">How It Works</Link>
+                    <Link href="/#product" className="hover:text-blue-600">Product</Link>
+                    <Link href="/#how_it_works" className="hover:text-blue-600">How It Works</Link>
                     {/* <Link href="/pricing" className="hover:text-blue-600">Pricing</Link> */}
-                    <Link href="#security" className="hover:text-blue-600">Security</Link>
+                    <Link href="/#security" className="hover:text-blue-600">Security</Link>
                     {/* <Link href="/blog" className="hover:text-blue-600">Blog</Link> */}
 
                     <Button asChild>
