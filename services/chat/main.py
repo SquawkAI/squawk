@@ -26,6 +26,29 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 session_store = SessionStore(max_messages=50)
 
+TONE_RULES = {
+    "formal": "Use precise, professional, and structured language. Avoid contractions and colloquialisms.",
+    "neutral": "Use clear, plain language. Stay objective and free of emotional or casual phrasing.",
+    "informal": "Use relaxed, conversational language with light warmth. Contractions are fine; keep it approachable.",
+}
+
+COMPLEXITY_RULES = {
+    "introductory": "Assume no prior knowledge. Avoid jargon; define terms briefly and use simple examples.",
+    "intermediate": "Provide moderate technical detail. Use some domain terms and brief explanations.",
+    "advanced": "Assume subject familiarity. Use precise domain terminology and rigorous explanations.",
+}
+
+DETAIL_RULES = {
+    "direct": "Answer concisely with only essential facts. Minimize explanation and qualifiers.",
+    "default": "Provide a balanced answer with brief supporting context and rationale.",
+    "explanatory": "Provide thorough explanation with reasoning, context, background, and—when helpful—short examples.",
+}
+
+AUTHORITY_RULES = {
+    "supportive": "Adopt an encouraging, coaching tone. Affirm progress and offer gentle guidance and next steps.",
+    "authoritative": "Adopt a confident, directive tone. State conclusions decisively and minimize hedging.",
+    "default": "Maintain a neutral, matter-of-fact tone. Present information without emphasis or hedging.",
+}
 
 class Conversation(BaseModel):
     id: Optional[str] = None
@@ -59,10 +82,38 @@ async def conversation(request: Request, conversation_request: Conversation):
     if not project_id or not query:
         raise HTTPException(
             status_code=400, detail="project_id and query are required")
+    
+    project = (
+        supabase.table("project")
+        .select("id, tone", "complexity", "authority", "detail")
+        .eq("id", str(project_id))
+        .execute()
+    )
+
+    tone = project.data[0]["tone"]
+    complexity = project.data[0]["complexity"]
+    authority = project.data[0]["authority"]
+    detail = project.data[0]["detail"]
+
+    if tone not in TONE_RULES:
+        tone = "neutral"
+    if complexity not in COMPLEXITY_RULES:
+        complexity = "intermediate"
+    if detail not in DETAIL_RULES:
+        detail = "default"
+    if authority not in AUTHORITY_RULES:
+        authority = "default"
+
+    sys_prompt = "\n".join([
+        "Follow these style requirements:",
+        f"- Tone: {TONE_RULES[tone]}",
+        f"- Complexity: {COMPLEXITY_RULES[complexity]}",
+        f"- Detail depth: {DETAIL_RULES[detail]}",
+        f"- Authority: {AUTHORITY_RULES[authority]}",
+    ])
 
     supabase_retriever = build_supabase_retriever(supabase, project_id)
-    chain = build_contextual_rag_with_history(
-        supabase_retriever, llm, session_store)
+    chain = build_contextual_rag_with_history(supabase_retriever, llm, session_store, sys_prompt)
     config = {"configurable": {"session_id": conversation_id}}
 
     # IMPORTANT: project the chain output to ONLY the final answer,

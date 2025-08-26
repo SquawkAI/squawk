@@ -9,6 +9,10 @@ export interface IProject {
     id: string;
     title: string;
     description: string;
+    tone: "formal" | "neutral" | "informal"
+    complexity: "introductory" | "intermediate" | "advanced"
+    authority: "supportive" | "authoritative" | "default"
+    detail: "direct" | "default" | "explanatory"
     updated_at: string;
 }
 

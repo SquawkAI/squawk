@@ -75,13 +75,7 @@ const DashboardPage: React.FC = () => {
     }
   );
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-    reset,
-  } = useForm<z.infer<typeof nameFormSchema>>({
+  const { register, handleSubmit, watch, formState: { errors }, reset, } = useForm<z.infer<typeof nameFormSchema>>({
     resolver: zodResolver(nameFormSchema),
     defaultValues: {
       title: project?.title ?? "",
@@ -124,6 +118,10 @@ const DashboardPage: React.FC = () => {
           title: data.title,
           description: project?.description ?? "",
           updated_at: new Date().toISOString(),
+          tone: 'neutral',
+          complexity: 'intermediate',
+          authority: 'default',
+          detail: 'default',
         },
         rollbackOnError: true,
         revalidate: false,

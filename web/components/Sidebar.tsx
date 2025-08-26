@@ -86,7 +86,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             {/* Profile icon pinned at bottom */}
-            <SidebarFooter>
+            {/* <SidebarFooter>
                 <div className="mt-4 flex flex-col space-y-6">
                     <Link
                         href="/profile"
@@ -96,7 +96,7 @@ export function AppSidebar() {
                         <span className="text-sm leading-none">Profile</span>
                     </Link>
                 </div>
-            </SidebarFooter>
+            </SidebarFooter> */}
         </Sidebar>
     );
 }
