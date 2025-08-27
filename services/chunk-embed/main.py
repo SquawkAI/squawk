@@ -26,9 +26,9 @@ embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
 
 SUPPORTED_TYPES = {
     ".pdf": PyPDFLoader,
-    ".txt": TextLoader,
-    ".md": UnstructuredMarkdownLoader,
-    ".docx": UnstructuredWordDocumentLoader,
+    # ".txt": TextLoader,
+    # ".md": UnstructuredMarkdownLoader,
+    # ".docx": UnstructuredWordDocumentLoader,
 }
 
 @app.get('/status')

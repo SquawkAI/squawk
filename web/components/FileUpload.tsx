@@ -9,11 +9,17 @@ type UploadedFile = { name: string;[key: string]: unknown };
 interface FileUploadProps {
   onUploadSuccess?: (file: UploadedFile) => void;
   folderId?: string | null;
-  projectId: string
+  projectId: string;
 }
 
-// TODO: Use React Query or SWR to provide optimistic updates and not refresh when the file is uploaded
-export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderId = null, projectId }) => {
+const isPdf = (file: File) =>
+  file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
+export const FileUpload: React.FC<FileUploadProps> = ({
+  onUploadSuccess,
+  folderId = null,
+  projectId,
+}) => {
   const { data: session, status } = useSession();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,74 +30,74 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
 
   const pickFile = () => {
     fileInputRef.current?.click();
-  }
+  };
 
-  const uploadFile = useCallback(async (file: File) => {
-    if (!session) {
-      setError("You must be signed in to upload files.");
-      return;
-    }
-
-    setUploading(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-
-      formData.append('projectId', projectId);
-      formData.append("file", file);
-      if (folderId) {
-        formData.append("folderId", folderId);
+  const uploadFile = useCallback(
+    async (file: File) => {
+      if (!session) {
+        setError("You must be signed in to upload files.");
+        return;
       }
 
-      const res = await fetch("/api/files", {
-        method: "POST",
-        body: formData,
-        credentials: "include"
-      });
+      setUploading(true);
+      setError(null);
 
-      const json = await res.json();
+      try {
+        const formData = new FormData();
+        formData.append("projectId", projectId);
+        formData.append("file", file);
+        if (folderId) {
+          formData.append("folderId", folderId);
+        }
 
-      if (!res.ok) throw new Error(json.error || "Upload failed");
+        const res = await fetch("/api/files", {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
 
-      onUploadSuccess?.(json.file as UploadedFile);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Upload failed");
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        onUploadSuccess?.(json.file as UploadedFile);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      } catch (err) {
+        console.error("Upload error:", err);
+        setError(err instanceof Error ? err.message : "Upload failed");
+        setTimeout(() => setError(null), 5000);
+      } finally {
+        setUploading(false);
       }
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError(err instanceof Error ? err.message : "Upload failed");
-      setTimeout(() => setError(null), 5000);
-    } finally {
-      setUploading(false);
+    },
+    [session, folderId, onUploadSuccess, projectId] 
+  );
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    const all = Array.from(files);
+    const valid = all.filter(isPdf);
+    const invalid = all.filter((f) => !isPdf(f));
+
+    if (invalid.length) {
+      setError("Only PDF files (.pdf) are allowed.");
+      setTimeout(() => setError(null), 4000);
     }
-  }, [session, folderId, onUploadSuccess]);
+
+    valid.forEach((file) => uploadFile(file));
+  };
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      // Upload each file individually
-      Array.from(files).forEach(file => uploadFile(file));
-    }
+    handleFiles(e.target.files);
   };
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-
     setDragOver(false);
-
-    const files = e.dataTransfer.files;
-
-    if (files) {
-      // Upload each file individually
-      Array.from(files).forEach(file => uploadFile(file));
-    }
+    handleFiles(e.dataTransfer.files);
   };
 
   const onDrag = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-
     if (e.type === "dragover") setDragOver(true);
     if (e.type === "dragleave") setDragOver(false);
   };
@@ -103,7 +109,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
 
   return (
     <div className="space-y-4">
-      <input type="file" ref={fileInputRef} onChange={onChange} className="hidden" multiple />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={onChange}
+        className="hidden"
+        multiple
+        accept="application/pdf,.pdf"
+      />
 
       <div
         className={`border-2 border-dashed ${borderColor} rounded-lg p-6 cursor-pointer hover:border-gray-400 transition-colors`}
@@ -115,9 +128,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, folderI
         <div className="flex items-center gap-4">
           <CloudArrowUp size={24} className={iconColor} />
           <div>
-            <p className="font-medium">{uploading ? "Uploading..." : "Upload Files"}</p>
+            <p className="font-medium">
+              {uploading ? "Uploading..." : "Upload PDF Files"}
+            </p>
             <p className="text-sm text-gray-500">
-              {uploading ? "Please wait while your files are uploaded" : "Click or drag & drop files here."}
+              {uploading
+                ? "Please wait while your files are uploaded"
+                : "Click or drag & drop .pdf files here."}
             </p>
           </div>
         </div>
