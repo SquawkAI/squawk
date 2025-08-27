@@ -9,7 +9,7 @@ import { NewProjectDialog } from "@/components/NewProjectDialog";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import {  MagnifyingGlass } from "@phosphor-icons/react";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import { DotsThreeVertical } from "@phosphor-icons/react";
 
 const ProjectsPage: React.FC = () => {
@@ -89,7 +89,7 @@ const ProjectsPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 pb-0 flex flex-col gap-4">
-      
+
       {/* Header */}
       <header className="flex items-center justify-between">
         <div className="inline-flex flex-col justify-center items-start gap-1">
@@ -216,17 +216,19 @@ const ProjectCard: React.FC<{
           </svg>
         </div>
         {/* Content */}
-        <div className="flex flex-col w-full">
-          <div className="text-lg leading-tight text-black truncate max-w-xs">
-            {title}
-          </div>
-          <div className="text-sm text-stone-500 truncate max-w-xs">
-            {description || "No description provided"}
+        <div className="flex  w-full">
+          <div>
+            <div className="text-lg leading-tight text-black truncate max-w-xs">
+              {title}
+            </div>
+            <div className="text-sm text-stone-500 truncate max-w-xs">
+              {description || "No description provided"}
+            </div>
           </div>
           <div className="relative w-full">
-            <div className="text-sm text-stone-500/50 truncate max-w-xs">
+            {/* <div className="text-sm text-stone-500/50 truncate max-w-xs">
               Updated {lastUpdated}
-            </div>
+            </div> */}
             <div className="absolute right-0 top-0">
               <div className="relative inline-block">
                 <button
