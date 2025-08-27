@@ -51,7 +51,7 @@ export function AppSidebar() {
                             href={`/projects/${projectId}`}
                             className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
                         >
-                            <Folders size={32} weight="regular" />
+                            <Folders size={36} weight="regular" />
                             <span className="text-sm leading-none">Projects</span>
                         </Link>
                     </div>
