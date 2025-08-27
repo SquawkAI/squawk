@@ -9,8 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { useParams } from "next/navigation";
 
-import { supabaseClient } from "@/lib/supabase";
-
 import { IProject } from "../layout";
 
 import {
@@ -134,24 +132,27 @@ const DashboardPage: React.FC = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  // fetch preview of selected doc from supabase storage
   const {
     data: previewLink,
     error: fetchPreviewLinkError,
     isLoading: fetchPreviewLinkLoading,
   } = useSWR(
-    selectedDoc ? `signed-url/${selectedDoc.name}` : null, // KEY
-    async () => {
-      const { data, error } = await supabaseClient.storage
-        .from("user-uploads")
-        .createSignedUrl(`${project?.id}/${selectedDoc?.name}`, 3600);
+    selectedDoc && project ? ["file-preview", selectedDoc.id] : null,
+    async ([, fileId]) => {
+      const res = await fetch(`/api/files/${encodeURIComponent(fileId)}/preview`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => res.statusText);
+        throw new Error(msg || "Failed to fetch preview");
+      }
 
-      if (error) throw error;
-      return data?.signedUrl;
+      const contentType = res.headers.get("content-type") || "application/octet-stream";
+      const ab = await res.arrayBuffer();
+      const blob = new Blob([ab], { type: contentType });
+      return URL.createObjectURL(blob);
     },
-    {
-      revalidateOnFocus: false,
-    }
+    { revalidateOnFocus: false }
   );
 
   return (
@@ -188,11 +189,10 @@ const DashboardPage: React.FC = () => {
                     handleSubmit(onSubmit)();
                   }
                 }}
-                className={`text-3xl font-bold bg-transparent border-0 border-b transition-colors w-fit focus:outline-none ${
-                  errors.title
-                    ? "border-red-400"
-                    : "border-gray-300 focus:border-gray-400"
-                }`}
+                className={`text-3xl font-bold bg-transparent border-0 border-b transition-colors w-fit focus:outline-none ${errors.title
+                  ? "border-red-400"
+                  : "border-gray-300 focus:border-gray-400"
+                  }`}
               />
               {errors.title && (
                 <p className="text-xs text-red-500">{errors.title.message}</p>
@@ -293,9 +293,7 @@ const DashboardPage: React.FC = () => {
           ) : previewLink ? (
             <div className="w-full min-h-[78vh] bg-white border rounded-lg p-3">
               <iframe
-                src={`https://docs.google.com/gview?url=${encodeURIComponent(
-                  previewLink
-                )}&embedded=true`}
+                src={previewLink}
                 className="w-full h-[75vh] rounded-md"
               />
             </div>
