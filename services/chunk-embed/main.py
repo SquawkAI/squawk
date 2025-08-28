@@ -6,6 +6,8 @@ import uuid
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from supabase import create_client, Client
 
+import sentry_sdk
+
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader, UnstructuredWordDocumentLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
@@ -14,9 +16,21 @@ from utils.security import get_user_id_from_request, assert_file_owned
 
 load_dotenv()
 
+APP_ENV = os.getenv("APP_ENV")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Enable sentry monitoring in production
+if APP_ENV == "production":
+    SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        # Add data like request headers and IP for users,
+        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+        send_default_pii=True,
+    )
 
 app = FastAPI()
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -31,6 +45,12 @@ SUPPORTED_TYPES = {
     # ".docx": UnstructuredWordDocumentLoader,
 }
 
+
+@app.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0
+
+
 @app.get('/status')
 async def status_check():
     return {"status": "ok", "message": "Embedding service is live"}
@@ -40,7 +60,7 @@ async def status_check():
 async def embed_file(request: Request, file_id: str = Form(...), file: UploadFile = File(...)):
     user_id = get_user_id_from_request(request)
     assert_file_owned(supabase, file_id, user_id)
-    
+
     ext = os.path.splitext(file.filename)[1].lower()
 
     if ext not in SUPPORTED_TYPES:
