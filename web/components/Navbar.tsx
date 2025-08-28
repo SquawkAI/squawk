@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 
 const Navbar: React.FC = () => {
     return (
-        <header className="w-full border-b border-border shrink-0 p-6 md:px-12">
+        <header className="w-full border-b border-border shrink-0 py-6 px-6 sm:px-8 md:px-10 lg:px-16 xl:px-24">
             <div className="mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Link href="/">
                         <Image
-                            src="/squawk-logo-large.png"
+                            src="./squawk-logo-text.svg"
                             alt="SquawkAI Logo"
                             priority
                             width={200}

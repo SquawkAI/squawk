@@ -31,7 +31,7 @@ export function AppSidebar() {
                 <div className="flex justify-center py-6">
                     <Link href="/">
                         <Image
-                            src="/squawk-logo-small.png"
+                            src="/squawk.svg"
                             alt="SquawkAI Logo"
                             priority
                             width={64}
