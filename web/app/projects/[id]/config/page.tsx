@@ -149,16 +149,16 @@ function OptionCard({
       aria-checked={selected}
       className={[
         "relative w-full text-left rounded-xl p-4 md:p-5 transition",
-        "bg-white ring-1 ring-stone-200 hover:ring-stone-300",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
-        selected ? "ring-2 ring-blue-500 shadow-sm bg-blue-50/40" : "",
+        "bg-background ring-1 ring-border hover:ring-border",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        selected ? "ring-2 ring-primary shadow-sm bg-primary/10" : "",
       ].join(" ")}
     >
       <span
         className={[
           "absolute right-3 top-3 h-5 w-5 rounded-full text-[11px] font-bold",
           "flex items-center justify-center transition-opacity",
-          selected ? "bg-blue-600 text-white opacity-100" : "bg-stone-200 text-stone-600 opacity-0 group-hover:opacity-60",
+          selected ? "bg-primary text-primary-foreground opacity-100" : "bg-muted text-muted-foreground opacity-0 group-hover:opacity-60",
         ].join(" ")}
         aria-hidden="true"
       >
@@ -167,13 +167,13 @@ function OptionCard({
 
       <div className="flex items-start gap-3">
         {item.icon ? (
-          <div className="h-9 w-9 flex items-center justify-center rounded-full bg-stone-100 text-lg">
+          <div className="h-9 w-9 flex items-center justify-center rounded-full bg-muted text-lg">
             {item.icon}
           </div>
         ) : null}
         <div>
-          <div className="text-sm font-semibold text-stone-900">{item.title}</div>
-          <div className="mt-1 text-xs md:text-[13px] leading-5 text-stone-600">{item.desc}</div>
+          <div className="text-sm font-semibold text-foreground">{item.title}</div>
+          <div className="mt-1 text-xs md:text-[13px] leading-5 text-muted-foreground">{item.desc}</div>
         </div>
       </div>
     </button>
@@ -251,12 +251,12 @@ const ConfigPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 md:px-8 lg:px-10 pt-6">
         <header className="mt-4 flex items-end justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-stone-900">Configure</h1>
-            <p className="mt-1 text-stone-600">Update chat settings and tone</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Configure</h1>
+            <p className="mt-1 text-muted-foreground">Update chat settings and tone</p>
           </div>
         </header>
       </div>
@@ -295,7 +295,7 @@ const ConfigPage: React.FC = () => {
             <div className="flex flex-col gap-8">
               {/* Tone */}
               <div role="radiogroup" aria-label="Tone">
-                <h2 className="text-lg font-semibold text-stone-900">Tone</h2>
+                <h2 className="text-lg font-semibold text-foreground">Tone</h2>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {toneChoices.map((c) => (
                     <OptionCard
@@ -306,12 +306,12 @@ const ConfigPage: React.FC = () => {
                     />
                   ))}
                 </div>
-                {errors.tone && <p className="mt-1 text-xs text-red-600">{errors.tone.message}</p>}
+                {errors.tone && <p className="mt-1 text-xs text-destructive">{errors.tone.message}</p>}
               </div>
 
               {/* Complexity */}
               <div role="radiogroup" aria-label="Complexity">
-                <h2 className="text-lg font-semibold text-stone-900">Complexity</h2>
+                <h2 className="text-lg font-semibold text-foreground">Complexity</h2>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {complexityChoices.map((c) => (
                     <OptionCard
@@ -325,13 +325,13 @@ const ConfigPage: React.FC = () => {
                   ))}
                 </div>
                 {errors.complexity && (
-                  <p className="mt-1 text-xs text-red-600">{errors.complexity.message}</p>
+                  <p className="mt-1 text-xs text-destructive">{errors.complexity.message}</p>
                 )}
               </div>
 
               {/* Detail */}
               <div role="radiogroup" aria-label="Style – Detail">
-                <h2 className="text-lg font-semibold text-stone-900">Style – Detail</h2>
+                <h2 className="text-lg font-semibold text-foreground">Style – Detail</h2>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {detailChoices.map((c) => (
                     <OptionCard
@@ -342,12 +342,12 @@ const ConfigPage: React.FC = () => {
                     />
                   ))}
                 </div>
-                {errors.detail && <p className="mt-1 text-xs text-red-600">{errors.detail.message}</p>}
+                {errors.detail && <p className="mt-1 text-xs text-destructive">{errors.detail.message}</p>}
               </div>
 
               {/* Authority */}
               <div role="radiogroup" aria-label="Style – Authority">
-                <h2 className="text-lg font-semibold text-stone-900">Style – Authority</h2>
+                <h2 className="text-lg font-semibold text-foreground">Style – Authority</h2>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {authorityChoices.map((c) => (
                     <OptionCard
@@ -361,7 +361,7 @@ const ConfigPage: React.FC = () => {
                   ))}
                 </div>
                 {errors.authority && (
-                  <p className="mt-1 text-xs text-red-600">{errors.authority.message}</p>
+                  <p className="mt-1 text-xs text-destructive">{errors.authority.message}</p>
                 )}
               </div>
             </div>
@@ -369,8 +369,8 @@ const ConfigPage: React.FC = () => {
             {/* Right: Preview */}
             <aside className="lg:sticky lg:top-6 h-fit">
               <div>
-                <h2 className="text-lg font-semibold text-stone-900">Preview</h2>
-                <div className="text-xs text-stone-500">
+                <h2 className="text-lg font-semibold text-foreground">Preview</h2>
+                <div className="text-xs text-muted-foreground">
                   Tone: <span className="font-medium">{tone}</span> · Complexity:{" "}
                   <span className="font-medium">{complexity}</span> · Detail:{" "}
                   <span className="font-medium">{detail}</span> · Authority:{" "}
@@ -378,8 +378,8 @@ const ConfigPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-3 rounded-xl bg-white ring-1 ring-stone-200 shadow-sm p-5">
-                <p className="text-sm leading-7 text-stone-700">
+              <div className="mt-3 rounded-xl bg-background ring-1 ring-border shadow-sm p-5">
+                <p className="text-sm leading-7 text-foreground">
                   {getPreview({ tone, complexity, detail, authority })}
                 </p>
 
@@ -392,8 +392,8 @@ const ConfigPage: React.FC = () => {
               type="submit"
               disabled={status === "saving"}
               className={[
-                "text-sm px-4 py-2 rounded-lg text-white transition",
-                status === "saving" ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700",
+                "text-sm px-4 py-2 rounded-lg text-primary-foreground transition",
+                status === "saving" ? "bg-primary cursor-not-allowed" : "bg-primary hover:bg-primary",
               ].join(" ")}
             >
               {status === "saving" ? "Saving..." : "Save Settings"}
