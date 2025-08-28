@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 import asyncio
 
+import sentry_sdk
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from supabase import Client, create_client
@@ -17,8 +19,20 @@ from utils.SessionStore import SessionStore
 
 load_dotenv()
 
+APP_ENV = os.getenv("APP_ENV")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Enable sentry monitoring in production
+if APP_ENV == "production":
+    SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        # Add data like request headers and IP for users,
+        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+        send_default_pii=True,
+    )
 
 app = FastAPI()
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -50,6 +64,7 @@ AUTHORITY_RULES = {
     "default": "Maintain a neutral, matter-of-fact tone. Present information without emphasis or hedging.",
 }
 
+
 class Conversation(BaseModel):
     id: Optional[str] = None
     project_id: str
@@ -67,6 +82,11 @@ def _sse_event_from_text(text: str) -> str:
     return "".join(out)
 
 
+@app.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0
+
+
 @app.get("/status")
 async def status_check():
     return {"status": "ok", "message": "Chat service is live"}
@@ -82,7 +102,7 @@ async def conversation(request: Request, conversation_request: Conversation):
     if not project_id or not query:
         raise HTTPException(
             status_code=400, detail="project_id and query are required")
-    
+
     project = (
         supabase.table("project")
         .select("id, tone", "complexity", "authority", "detail")
@@ -113,7 +133,8 @@ async def conversation(request: Request, conversation_request: Conversation):
     ])
 
     supabase_retriever = build_supabase_retriever(supabase, project_id)
-    chain = build_contextual_rag_with_history(supabase_retriever, llm, session_store, sys_prompt)
+    chain = build_contextual_rag_with_history(
+        supabase_retriever, llm, session_store, sys_prompt)
     config = {"configurable": {"session_id": conversation_id}}
 
     # IMPORTANT: project the chain output to ONLY the final answer,
