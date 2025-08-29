@@ -229,7 +229,7 @@ export default function ChatPage() {
                 className="fixed top-0 left-0 right-0 z-30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
             >
                 <div className="flex items-center justify-between max-w-5xl px-6 py-3 mx-auto">
-                    <Image src="/squawk-logo-large.png" alt="SquawkAI Logo" width={120} height={40} priority />
+                    <Image src="/squawk-logo-text.svg" alt="SquawkAI Logo" width={120} height={40} priority />
                 </div>
             </header>
 
