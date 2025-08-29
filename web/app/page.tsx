@@ -5,6 +5,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { LockSimple, Detective, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import { FilesPage } from "@/components/landing/FilesPage";
+import { ChatPage } from "@/components/landing/ChatPage";
+import { SharePage } from "@/components/landing/SharePage";
 
 export default function Home() {
   return (
@@ -90,13 +94,13 @@ export default function Home() {
           <h2 className="text-4xl sm:text-5xl font-semibold text-foreground">
             See How Squawk Supports Your Students
           </h2>
-          <p className="mt-5 text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
             Discover how Squawk transforms your course materials into an
             on-demand AI assistant. Students can review concepts, find answers, and stay engaged — without adding more to your workload.
           </p>
 
           {/* Video */}
-          <div className="mt-12 relative w-full max-w-6xl mx-auto aspect-video rounded-xl overflow-hidden shadow-xl border border-border">
+          <div className="mt-16 relative w-full max-w-6xl mx-auto aspect-video rounded-xl overflow-hidden shadow-xl border border-border">
             <video
               src="/demo.mp4"
               className="w-full h-full object-cover"
@@ -124,18 +128,12 @@ export default function Home() {
           </div>
 
           {/* Rows */}
-          <div className="mt-24 space-y-40"> {/* increased spacing between rows */}
+          <div className="mt-16 space-y-24">
             {/* Row 1 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
               {/* more gap between media & text */}
               <div>
-                <Image
-                  src="/files.png"
-                  alt="Custom Content Integration Demo"
-                  width={960}
-                  height={700}
-                  className="w-full h-auto rounded-xl border border-border shadow-sm"
-                />
+                <FilesPage />
               </div>
               <div className="text-center md:text-left">
                 <h3 className="text-4xl font-semibold text-foreground">
@@ -159,26 +157,14 @@ export default function Home() {
                 </p>
               </div>
               <div className="order-1 md:order-2">
-                <Image
-                  src="/conversation.png"
-                  alt="Natural Conversation Demo"
-                  width={960}
-                  height={700}
-                  className="w-full h-auto rounded-xl border border-border shadow-sm"
-                />
+                <ChatPage />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
               {/* more gap between media & text */}
               <div>
-                <Image
-                  src="/share.png"
-                  alt="Custom Content Integration Demo"
-                  width={960}
-                  height={700}
-                  className="w-full h-auto rounded-xl border border-border shadow-sm"
-                />
+                <SharePage />
               </div>
               <div className="text-center md:text-left">
                 <h3 className="text-4xl font-semibold text-foreground">
@@ -200,8 +186,8 @@ export default function Home() {
             <h2 className="text-4xl sm:text-5xl font-semibold text-foreground">
               How It Works
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-              We do the heavy lifting so you don’t have to.
+            <p className="mt-6 text-lg text-muted-foreground max-w-3xl mx-auto">
+              We do the heavy lifting so you don't have to.
             </p>
           </div>
 
@@ -218,10 +204,10 @@ export default function Home() {
                   className="w-full h-auto rounded-xl border border-border shadow-sm"
                 />
               </div>
-              <h3 className="mt-8 text-2xl sm:text-3xl font-semibold text-foreground">
+              <h3 className="mt-6 text-2xl sm:text-3xl font-semibold text-foreground">
                 Upload Your Content
               </h3>
-              <p className="mt-3 text-muted-foreground">
+              <p className="mt-4 text-muted-foreground">
                 Add lectures, PDFs, slides, and videos. We process and organize everything automatically.
               </p>
             </div>
@@ -237,10 +223,10 @@ export default function Home() {
                   className="w-full h-auto rounded-xl border border-border shadow-sm"
                 />
               </div>
-              <h3 className="mt-8 text-2xl sm:text-3xl font-semibold text-foreground">
+              <h3 className="mt-6 text-2xl sm:text-3xl font-semibold text-foreground">
                 Let Us Build Your Agent
               </h3>
-              <p className="mt-3 text-muted-foreground">
+              <p className="mt-4 text-muted-foreground">
                 Squawk turns your materials into a smart assistant that answers with context.
               </p>
             </div>
@@ -256,10 +242,10 @@ export default function Home() {
                   className="w-full h-auto rounded-xl border border-border shadow-sm"
                 />
               </div>
-              <h3 className="mt-8 text-2xl sm:text-3xl font-semibold text-foreground">
+              <h3 className="mt-6 text-2xl sm:text-3xl font-semibold text-foreground">
                 Add It To Your Site
               </h3>
-              <p className="mt-3 text-muted-foreground">
+              <p className="mt-4 text-muted-foreground">
                 Copy a link or embed in your LMS or website—no coding required.
               </p>
             </div>
@@ -274,7 +260,7 @@ export default function Home() {
             <h2 className="text-4xl sm:text-5xl font-semibold text-foreground">
               Secure By Design
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
+            <p className="mt-6 text-lg text-muted-foreground max-w-3xl mx-auto">
               Your content and student interactions are protected with industry-standard encryption
               at rest and in transit. Squawk is built with privacy and security at the core.
             </p>
@@ -285,8 +271,8 @@ export default function Home() {
             {/* Card 1 */}
             <div className="text-center md:text-left">
               <div className="w-full flex justify-center">
-                <div className="w-16 h-16 mx-auto md:mx-0 flex items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold">
-                  🔒
+                <div className="w-16 h-16 mx-auto md:mx-0 flex items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <LockSimple size={32} weight="bold" />
                 </div>
               </div>
               <h3 className="mt-6 text-center text-xl font-semibold text-foreground">
@@ -300,8 +286,8 @@ export default function Home() {
             {/* Card 2 */}
             <div className="text-center md:text-left">
               <div className="w-full flex justify-center">
-                <div className="w-16 h-16 mx-auto md:mx-0 flex items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold">
-                  🛡️
+                <div className="w-16 h-16 mx-auto md:mx-0 flex items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Detective size={32} weight="bold" />
                 </div>
               </div>
               <h3 className="mt-6 text-center text-xl font-semibold text-foreground">
@@ -316,8 +302,8 @@ export default function Home() {
             {/* Card 3 */}
             <div className="text-center md:text-left ">
               <div className="w-full flex justify-center">
-                <div className="w-16 h-16 mx-auto md:mx-0 flex items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold">
-                  ✅
+                <div className="w-16 h-16 mx-auto md:mx-0 flex items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <ShieldCheck size={32} weight="bold" />
                 </div>
               </div>
               <h3 className="mt-6 text-xl text-center font-semibold text-foreground">
