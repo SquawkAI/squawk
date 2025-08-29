@@ -113,16 +113,16 @@ const formatFileSize = (bytes?: number) => {
 
 // small gluable UI parts
 const LoadingState = () => (
-  <div className="bg-white border rounded-lg p-8 text-center">
-    <p className="text-gray-500">Loading files...</p>
+  <div className="bg-background border border-border rounded-lg p-8 text-center">
+    <p className="text-muted-foreground">Loading files...</p>
   </div>
 );
 
 const SWRErrorState = ({ message, onRetry }: { message: string; onRetry: () => void; }) => (
-  <div className="bg-white border rounded-lg p-8 text-center">
-    <p className="text-red-500 mb-4">Error: {message}</p>
+  <div className="bg-background border border-border rounded-lg p-8 text-center">
+    <p className="text-destructive mb-4">Error: {message}</p>
     <div className="space-x-2">
-      <button onClick={onRetry} className="text-blue-500 hover:underline">
+      <button onClick={onRetry} className="text-primary hover:underline">
         Try again
       </button>
     </div>
@@ -130,16 +130,16 @@ const SWRErrorState = ({ message, onRetry }: { message: string; onRetry: () => v
 );
 
 const EmptyState = ({ isSearching }: { isSearching?: boolean }) => (
-  <div className="bg-white border rounded-lg p-8 text-center">
+  <div className="bg-background border border-border rounded-lg p-8 text-center">
     <FileText
       size={48}
       weight="regular"
-      className="mx-auto mb-4 text-gray-400"
+      className="mx-auto mb-4 text-muted-foreground"
     />
-    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+    <h3 className="text-lg font-semibold text-foreground mb-2">
       {isSearching ? "No files found" : "No files yet"}
     </h3>
-    <p className="text-gray-500">
+    <p className="text-muted-foreground">
       {isSearching
         ? "No files match your search. Try adjusting your search terms."
         : "Upload your first file to get started."
@@ -256,38 +256,38 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
   return (
     <div className="space-y-4">
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error.message}</p>
+        <div className="p-3 bg-destructive/10 border border-border rounded-md">
+          <p className="text-sm text-destructive">{error.message}</p>
         </div>
       )}
 
-      <div className="bg-white border rounded-lg overflow-hidden">
-        <table className="w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-background border border-border rounded-lg overflow-hidden">
+        <table className="w-full divide-y divide-border">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Name</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Size</th>
+              <th className="px-4 py-2 text-left text-sm font-medium text-foreground">Name</th>
+              <th className="px-4 py-2 text-left text-sm font-medium text-foreground">Size</th>
               <th className="px-4 py-2" />
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {filteredFiles.map((file) => (
               <tr
                 key={file.id}
-                className={`hover:bg-gray-50 cursor-pointer ${selectedDoc?.id === file.id ? "bg-blue-50 ring-1 ring-blue-200" : ""
+                className={`hover:bg-muted cursor-pointer ${selectedDoc?.id === file.id ? "bg-primary/10 ring-1 ring-ring" : ""
                   } ${deletingFile === file.id ? "opacity-50" : ""}`}
                 onClick={() => setSelectedDoc(file)}
               >
 
                 <td className="px-4 py-3 flex items-center gap-2">
-                  <FileText size={20} className="text-gray-500" />
+                  <FileText size={20} className="text-muted-foreground" />
                   <span>{file.name}</span>
 
                   {file.status === "processing" && (
-                    <span className="ml-2 flex items-center gap-1 text-xs text-blue-500 font-medium">
+                    <span className="ml-2 flex items-center gap-1 text-xs text-primary font-medium">
                       <svg
-                        className="animate-spin h-4 w-4 text-blue-500"
+                        className="animate-spin h-4 w-4 text-primary"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -311,9 +311,9 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                   )}
 
                   {file.status === "failed" && (
-                    <span className="ml-2 flex items-center gap-1 text-xs text-red-600 font-medium">
+                    <span className="ml-2 flex items-center gap-1 text-xs text-destructive font-medium">
                       <svg
-                        className="h-4 w-4 text-red-600"
+                        className="h-4 w-4 text-destructive"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -330,7 +330,7 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500">
+                <td className="px-4 py-3 text-sm text-muted-foreground">
                   {formatFileSize(file.size)}
                 </td>
                 <td className="px-4 py-3">
@@ -339,7 +339,7 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                       <button
                         onClick={() => handleRetry(file.id)}
                         disabled={deletingFile === file.id}
-                        className="text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="text-muted-foreground hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title={`Retry ${file.name}`}
                       >
                         <ArrowCounterClockwise size={20} />
@@ -350,7 +350,7 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                       <button
                         onClick={() => handleDelete(file.id, file.name)}
                         disabled={deletingFile === file.id}
-                        className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="text-muted-foreground hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title={`Delete ${file.name}`}
                       >
                         <Trash size={20} />

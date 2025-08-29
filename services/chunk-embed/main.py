@@ -1,10 +1,14 @@
 import os
 import tempfile
 from dotenv import load_dotenv
+import asyncio
 
 import uuid
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from supabase import create_client, Client
+
+import sentry_sdk
+from sentry_sdk.crons import monitor
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader, UnstructuredWordDocumentLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -14,12 +18,57 @@ from utils.security import get_user_id_from_request, assert_file_owned
 
 load_dotenv()
 
+APP_ENV = os.getenv("APP_ENV")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 app = FastAPI()
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Enable sentry monitoring in production
+if APP_ENV == "production":
+    SENTRY_DSN = os.getenv("SENTRY_DSN")
+    MONITOR_SLUG = os.getenv("SENTRY_MONITOR_SLUG")
+    HEARTBEAT_SEC = int(os.getenv("SENTRY_MONITOR_INTERVAL_SEC", "3600"))
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        # Add data like request headers and IP for users,
+        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+        send_default_pii=True,
+    )
+
+    @app.on_event("startup")
+    async def start_heartbeat():
+        # store task so we can cancel on shutdown
+        async def _beat():
+            # send one check-in immediately at boot
+            with monitor(monitor_slug=MONITOR_SLUG):
+                pass
+            while True:
+                try:
+                    await asyncio.sleep(HEARTBEAT_SEC)
+                    with monitor(monitor_slug=MONITOR_SLUG):
+                        pass
+                except asyncio.CancelledError:
+                    # allow clean shutdown
+                    break
+                except Exception as e:
+                    # report any unexpected heartbeat failure but keep looping
+                    sentry_sdk.capture_exception(e)
+
+        app.state.sentry_heartbeat_task = asyncio.create_task(_beat())
+
+    @app.on_event("shutdown")
+    async def stop_heartbeat():
+        task = getattr(app.state, "sentry_heartbeat_task", None)
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except Exception:
+                pass
 
 # TODO: Determine best embeddings
 embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
@@ -31,6 +80,12 @@ SUPPORTED_TYPES = {
     # ".docx": UnstructuredWordDocumentLoader,
 }
 
+
+@app.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0
+
+
 @app.get('/status')
 async def status_check():
     return {"status": "ok", "message": "Embedding service is live"}
@@ -40,7 +95,7 @@ async def status_check():
 async def embed_file(request: Request, file_id: str = Form(...), file: UploadFile = File(...)):
     user_id = get_user_id_from_request(request)
     assert_file_owned(supabase, file_id, user_id)
-    
+
     ext = os.path.splitext(file.filename)[1].lower()
 
     if ext not in SUPPORTED_TYPES:

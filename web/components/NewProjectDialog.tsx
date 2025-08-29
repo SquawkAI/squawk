@@ -104,10 +104,10 @@ export function NewProjectDialog({ open, onOpenChange, onCreate, trigger, defaul
         >
           {/* Decorative bubbles */}
           <div className="pointer-events-none absolute -right-24 -top-24 size-56 rounded-full bg-primary/10 blur-2xl" />
-          <div className="pointer-events-none absolute -left-28 -bottom-28 size-64 rounded-full bg-blue-400/10 dark:bg-blue-300/10 blur-2xl" />
+          <div className="pointer-events-none absolute -left-28 -bottom-28 size-64 rounded-full bg-primary/10 blur-2xl" />
 
           {/* Header */}
-          <div className="relative flex items-center gap-3 border-b bg-accent/40 px-6 py-4">
+          <div className="relative flex items-center gap-3 border-b border-border bg-accent/40 px-6 py-4">
             <div className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <FolderPlusIcon className="size-5" />
             </div>

@@ -7,7 +7,7 @@ import { v4 as uuid } from "uuid";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Plus } from "lucide-react";
+import { Plus, PaperPlaneTilt } from "@phosphor-icons/react";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -275,7 +275,7 @@ export default function ChatPage() {
                             className="flex-1 min-h-[40px] max-h-[220px] resize-none border-none shadow-none bg-transparent outline-none focus-visible:ring-0"
                         />
                         <Button onClick={sendMessage} disabled={!input.trim() || isLoading} className="h-10 rounded-full">
-                            <Send size={16} />
+                            <PaperPlaneTilt size={16} />
                         </Button>
                     </div>
                 </div>
