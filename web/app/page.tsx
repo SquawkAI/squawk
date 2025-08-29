@@ -187,7 +187,7 @@ export default function Home() {
               How It Works
             </h2>
             <p className="mt-6 text-lg text-muted-foreground max-w-3xl mx-auto">
-              We do the heavy lifting so you don't have to.
+              We do the heavy lifting so you don&apos;t have to.
             </p>
           </div>
 
