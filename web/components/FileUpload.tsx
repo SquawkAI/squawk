@@ -102,8 +102,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     if (e.type === "dragleave") setDragOver(false);
   };
 
-  const borderColor = dragOver ? "border-blue-400" : "border-gray-300";
-  const iconColor = uploading ? "text-blue-500" : "text-gray-400";
+  const borderColor = dragOver ? "border-primary" : "border-border";
+  const iconColor = uploading ? "text-primary" : "text-muted-foreground";
 
   if (status === "loading") return null;
 
@@ -119,7 +119,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       />
 
       <div
-        className={`border-2 border-dashed ${borderColor} rounded-lg p-6 cursor-pointer hover:border-gray-400 transition-colors`}
+        className={`border-2 border-dashed ${borderColor} rounded-lg p-6 cursor-pointer hover:border-primary transition-colors`}
         onClick={pickFile}
         onDrop={onDrop}
         onDragOver={onDrag}
@@ -131,7 +131,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             <p className="font-medium">
               {uploading ? "Uploading..." : "Upload PDF Files"}
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {uploading
                 ? "Please wait while your files are uploaded"
                 : "Click or drag & drop .pdf files here."}
@@ -141,8 +141,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
+                  <div className="p-3 bg-destructive/10 border border-border rounded-md">
+            <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
     </div>

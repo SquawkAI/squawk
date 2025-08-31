@@ -47,9 +47,9 @@ const PreviewPlaceholder = ({
   title: string;
   message: string;
 }) => (
-  <div className="w-full h-full bg-white border rounded-lg p-8 flex flex-col items-center justify-center text-center text-gray-500">
+  <div className="w-full h-full bg-background border border-border rounded-lg p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
     {icon}
-    <h2 className="text-xl font-semibold text-black mb-2">{title}</h2>
+    <h2 className="text-xl font-semibold text-foreground mb-2">{title}</h2>
     <p>{message}</p>
   </div>
 );
@@ -160,7 +160,7 @@ const DashboardPage: React.FC = () => {
       {/* Back button */}
       <Link
         href="/projects"
-        className="flex items-center gap-1 text-sm text-black hover:text-stone-800 transition-colors"
+        className="flex items-center gap-1 text-sm text-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft size={16} />
         Back
@@ -190,31 +190,31 @@ const DashboardPage: React.FC = () => {
                   }
                 }}
                 className={`text-3xl font-bold bg-transparent border-0 border-b transition-colors w-fit focus:outline-none ${errors.title
-                  ? "border-red-400"
-                  : "border-gray-300 focus:border-gray-400"
+                  ? "border-destructive"
+                  : "border-border focus:border-border"
                   }`}
               />
               {errors.title && (
-                <p className="text-xs text-red-500">{errors.title.message}</p>
+                <p className="text-xs text-destructive">{errors.title.message}</p>
               )}
             </div>
           ) : (
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold relative after:absolute after:left-0 after:-bottom-1 after:w-full after:h-[1px] after:bg-gray-300 after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform after:origin-left">
+                <h1 className="text-3xl font-bold relative after:absolute after:left-0 after:-bottom-1 after:w-full after:h-[1px] after:bg-border after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform after:origin-left">
                   {title}
                 </h1>
-                <PencilSimpleIcon className="w-5 h-5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <PencilSimpleIcon className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               {errors.title && (
-                <p className="text-xs text-red-500">{errors.title.message}</p>
+                <p className="text-xs text-destructive">{errors.title.message}</p>
               )}
             </div>
           )}
         </form>
 
         {/* Project Description (static) */}
-        <div className="text-stone-600 text-md">
+        <div className="text-muted-foreground text-md">
           {project?.description || "No description provided"}
         </div>
       </header>
@@ -231,12 +231,12 @@ const DashboardPage: React.FC = () => {
               placeholder="Search your sources"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+              className="flex w-full rounded-md border border-border p-3 text-sm focus:border-primary focus:ring-2 focus:ring-ring outline-none transition"
             />
             <MagnifyingGlass
               size={18}
               weight="bold"
-              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
+              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
             />
           </div>
 
@@ -283,7 +283,7 @@ const DashboardPage: React.FC = () => {
                   <WarningCircle
                     size={48}
                     weight="regular"
-                    className="mb-4 text-red-500"
+                    className="mb-4 text-destructive"
                   />
                 }
                 title="Preview failed"
@@ -291,7 +291,7 @@ const DashboardPage: React.FC = () => {
               />
             </div>
           ) : previewLink ? (
-            <div className="w-full min-h-[78vh] bg-white border rounded-lg p-3">
+            <div className="w-full min-h-[78vh] bg-background border border-border rounded-lg p-3">
               <iframe
                 src={previewLink}
                 className="w-full h-[75vh] rounded-md"

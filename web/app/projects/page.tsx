@@ -82,10 +82,10 @@ const ProjectsPage: React.FC = () => {
 
   if (error)
     return (
-      <div className="text-center text-red-500">Failed to load projects.</div>
+      <div className="text-center text-destructive">Failed to load projects.</div>
     );
   if (isLoading)
-    return <div className="text-center text-gray-500">Loading projects...</div>;
+    return <div className="text-center text-muted-foreground">Loading projects...</div>;
 
   return (
     <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 pb-0 flex flex-col gap-4">
@@ -94,7 +94,7 @@ const ProjectsPage: React.FC = () => {
       <header className="flex items-center justify-between">
         <div className="inline-flex flex-col justify-center items-start gap-1">
           <div className="text-3xl font-bold">Projects</div>
-          <div className="text-stone-600 text-md">
+          <div className="text-muted-foreground text-md">
             View and manage all projects
           </div>
         </div>
@@ -120,18 +120,18 @@ const ProjectsPage: React.FC = () => {
             placeholder="Search your projects"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+            className="flex w-full rounded-md border border-border p-3 text-sm focus:border-primary focus:ring-2 focus:ring-ring outline-none transition"
           />
           <MagnifyingGlass
             size={18}
             weight="bold"
-            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
+            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
           />
         </div>
 
         {/* Projects */}
         {filteredProjects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
+          <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
             <p className="mb-4 italic">
               Nothing here yet… let’s fix that! Create your first project below.
             </p>
@@ -187,7 +187,7 @@ const ProjectCard: React.FC<{
   }, [menuOpen]);
 
   return (
-    <div className="flex flex-col relative border border-gray-300 rounded-md p-2 justify-between">
+    <div className="flex flex-col relative border border-border rounded-md p-2 justify-between">
       {/* Clickable Content */}
       <div
         className="flex items-stretch gap-4 py-2 cursor-pointer rounded"
@@ -218,10 +218,10 @@ const ProjectCard: React.FC<{
         {/* Content */}
         <div className="flex  w-full">
           <div>
-            <div className="text-lg leading-tight text-black truncate max-w-xs">
+            <div className="text-lg leading-tight text-foreground truncate max-w-xs">
               {title}
             </div>
-            <div className="text-sm text-stone-500 truncate max-w-xs">
+            <div className="text-sm text-muted-foreground truncate max-w-xs">
               {description || "No description provided"}
             </div>
           </div>
@@ -232,7 +232,7 @@ const ProjectCard: React.FC<{
             <div className="absolute right-0 top-0">
               <div className="relative inline-block">
                 <button
-                  className="flex items-center justify-center rounded-full hover:bg-gray-100 transition z-10"
+                  className="flex items-center justify-center rounded-full hover:bg-muted transition z-10"
                   onClick={(e) => {
                     e.stopPropagation();
                     setMenuOpen((v) => !v);
@@ -245,13 +245,13 @@ const ProjectCard: React.FC<{
                 >
                   <DotsThreeVertical
                     weight="bold"
-                    className="w-auto h-5 text-gray-400"
+                    className="w-auto h-5 text-muted-foreground"
                   />
                 </button>
                 {menuOpen && (
                   <div
                     ref={menuRef}
-                    className="absolute left-0 top-full mt-2 bg-white border border-gray-200 rounded shadow-lg p-2 z-20"
+                    className="absolute left-0 top-full mt-2 bg-background border border-border rounded shadow-lg p-2 z-20"
                   >
                     <button
                       className="flex items-center gap-1 group cursor-pointer p-1 rounded-md"
@@ -262,9 +262,9 @@ const ProjectCard: React.FC<{
                     >
                       <Trash2
                         size={18}
-                        className="text-black group-hover:text-red-500 transition-colors "
+                        className="text-foreground group-hover:text-destructive transition-colors "
                       />
-                      <div className="text-sm text-black group-hover:text-red-500 transition-colors">
+                      <div className="text-sm text-foreground group-hover:text-destructive transition-colors">
                         Delete
                       </div>
                     </button>

@@ -7,7 +7,8 @@ import { v4 as uuid } from "uuid";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Plus, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
+import { Plus, PaperPlaneTilt } from "@phosphor-icons/react";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -241,7 +242,7 @@ export default function ChatPage() {
                 className="fixed top-0 left-0 right-0 z-30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
             >
                 <div className="flex items-center justify-between max-w-5xl px-6 py-3 mx-auto">
-                    <Image src="/squawk-logo-large.png" alt="SquawkAI Logo" width={120} height={40} priority />
+                    <Image src="/squawk-logo-text.svg" alt="SquawkAI Logo" width={120} height={40} priority />
                 </div>
             </header>
 
@@ -287,8 +288,8 @@ export default function ChatPage() {
                             }}
                             className="flex-1 min-h-[40px] max-h-[220px] resize-none border-none shadow-none bg-transparent outline-none focus-visible:ring-0"
                         />
-                        <Button onClick={sendMessage} disabled={!input.trim() || isLoading || isStreaming} className="h-10 rounded-full">
-                            <Send size={16} />
+                        <Button onClick={sendMessage} disabled={!input.trim() || isLoading} className="h-10 rounded-full">
+                            <PaperPlaneTilt size={16} />
                         </Button>
                     </div>
                 </div>

@@ -31,7 +31,7 @@ export function AppSidebar() {
                 <div className="flex justify-center py-6">
                     <Link href="/">
                         <Image
-                            src="/squawk-logo-small.png"
+                            src="/squawk.svg"
                             alt="SquawkAI Logo"
                             priority
                             width={64}
@@ -49,7 +49,7 @@ export function AppSidebar() {
                     <div className="mt-4 flex flex-col items-center gap-4">
                         <Link
                             href={`/projects/${projectId}`}
-                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
+                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects`) ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
                         >
                             <Folders size={36} weight="regular" />
                             <span className="text-sm leading-none">Projects</span>
@@ -60,7 +60,7 @@ export function AppSidebar() {
                     <div className="mt-4 flex flex-col items-center gap-4">
                         <Link
                             href={`/projects/${projectId}`}
-                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
+                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}`) ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
                         >
                             <BookOpenText size={36} weight="regular" />
                             <span className="text-sm leading-none">Sources</span>
@@ -68,7 +68,7 @@ export function AppSidebar() {
                         {/* Configure */}
                         <Link
                             href={`/projects/${projectId}/config`}
-                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}/config`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
+                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}/config`) ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
                         >
                             <FadersHorizontalIcon size={36} weight="regular" />
                             <span className="text-sm leading-none">Configure</span>
@@ -76,7 +76,7 @@ export function AppSidebar() {
                         {/* Share */}
                         <Link
                             href={`/projects/${projectId}/share`}
-                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}/share`) ? "bg-blue-500/15 text-blue-500" : "text-stone-600 hover:bg-gray-100"}`}
+                            className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl w-28 justify-center ${isActive(`/projects/${projectId}/share`) ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
                         >
                             <ShareNetwork size={36} weight="regular" />
                             <span className="text-sm leading-none">Share</span>
