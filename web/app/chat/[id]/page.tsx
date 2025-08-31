@@ -7,7 +7,7 @@ import { v4 as uuid } from "uuid";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Plus } from "lucide-react";
+import { Send, Plus, Loader2 } from "lucide-react";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -72,12 +72,20 @@ interface MessageProps {
     content: string;
 }
 
+
+const ThinkingLine: React.FC = () => (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Thinking…</span>
+    </div>
+);
+
 const Message: React.FC<MessageProps> = ({ role, content }) => {
     const isUser = role === "user";
 
     return (
-        <div className={`flex items-start gap-3 ${isUser ? "justify-end" : ""}`}>
-            <div className={`rounded-2xl px-4 py-2 text-sm leading-relaxed max-w-[75%] ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+        <div className={`flex items-start  gap-3 ${isUser ? "justify-end" : ""}`}>
+            <div className={`rounded-2xl py-2 text-sm leading-relaxed max-w-[75%] ${content && "px-4"} ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                 {isUser ? (
                     <div className="whitespace-pre-wrap">{content}</div>
                 ) : (
@@ -86,7 +94,7 @@ const Message: React.FC<MessageProps> = ({ role, content }) => {
                             remarkPlugins={[remarkGfm, remarkBreaks]} // ← remove remarkBreaks to avoid odd line wrapping
                             components={{
                                 // Do NOT override <pre>; let SyntaxHighlighter own the block wrapper.
-                            code({ className, children, ...props }) {
+                                code({ className, children, ...props }) {
                                     const m = /language-([\w+-]+)/i.exec(className || "");
                                     const lang = normalizeLang(m?.[1] || "");
 
@@ -146,14 +154,14 @@ const Message: React.FC<MessageProps> = ({ role, content }) => {
 export default function ChatPage() {
     const { id: projectId } = useParams();
     const [sessionId, setSessionId] = useState(uuid());
-    
-    
+
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<{ role: "user" | "assistant", content: string }[]>([
         { role: "assistant", content: "Hi! Ask me anything about your course materials." },
     ]);
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isStreaming, setIsStreaming] = useState(false);
 
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const headerRef = useRef<HTMLElement>(null);
@@ -170,11 +178,12 @@ export default function ChatPage() {
 
     const sendMessage = async () => {
         const text = input.trim();
-        if (!text || isLoading) return;
+        if (!text || isLoading || isStreaming) return;
 
         setMessages((prev) => [...prev, { role: "user", content: text }]);
         setInput("");
         setIsLoading(true);
+        setIsStreaming(true);
 
         const assistantIndex = messages.length + 1;
         setMessages((prev) => [...prev, { role: "assistant", content: "", streaming: true }]);
@@ -192,6 +201,8 @@ export default function ChatPage() {
             const decoder = new TextDecoder();
 
             while (true) {
+                setIsLoading(false);
+
                 const { value, done } = await reader.read();
                 if (done) break;
                 const chunk = decoder.decode(value, { stream: true });
@@ -218,6 +229,7 @@ export default function ChatPage() {
                 return copy;
             });
             setIsLoading(false);
+            setIsStreaming(false);
         }
     };
 
@@ -244,6 +256,7 @@ export default function ChatPage() {
                         <Message key={idx} role={m.role} content={m.content} />
                     ))}
 
+                    {isLoading && <ThinkingLine />}
                 </div>
             </div>
 
@@ -274,7 +287,7 @@ export default function ChatPage() {
                             }}
                             className="flex-1 min-h-[40px] max-h-[220px] resize-none border-none shadow-none bg-transparent outline-none focus-visible:ring-0"
                         />
-                        <Button onClick={sendMessage} disabled={!input.trim() || isLoading} className="h-10 rounded-full">
+                        <Button onClick={sendMessage} disabled={!input.trim() || isLoading || isStreaming} className="h-10 rounded-full">
                             <Send size={16} />
                         </Button>
                     </div>
