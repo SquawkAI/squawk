@@ -5,21 +5,28 @@ const CHAT_SERVICE = process.env.CHAT_SERVICE_URL
 
 export async function POST(req: NextRequest) {
 
-  const payload = await req.json().catch(() => ({}));
+  let payload;
+  let upstream;
 
-  const upstream = await fetch(CHAT_SERVICE!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    payload = await req.json().catch(() => ({}));
+
+    upstream = await fetch(CHAT_SERVICE!, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return new Response("Something went wrong.", { status: 502 });
+  }
 
   if (!upstream.ok || !upstream.body) {
-    return new Response("Something went wrong", { status: 502 });
+    return new Response("Something went wrong.", { status: 502 });
   }
 
   const decoder = new TextDecoder();
@@ -86,7 +93,8 @@ export async function POST(req: NextRequest) {
 
         controller.close();
       } catch (err: unknown) {
-        controller.enqueue(encoder.encode("Error: " + ((err as Error)?.message || String(err))));
+        controller.enqueue(encoder.encode("Something went wrong."));
+        console.log("Error: " + ((err as Error)?.message || String(err)))
         controller.close();
       }
     },
