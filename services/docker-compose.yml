@@ -9,6 +9,10 @@ services:
     container_name: squawk-chunk-embed
     env_file:
       - ./chunk-embed/.env  
+    volumes:
+      - ./chunk-embed:/app   # Mount local code for hot reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
   chat:
     build:
       context: ./chat
@@ -17,3 +21,6 @@ services:
     container_name: squawk-chat
     env_file:
       - ./chat/.env 
+    volumes:
+      - ./chat:/app   # Mount local code for hot reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
