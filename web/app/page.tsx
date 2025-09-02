@@ -171,7 +171,7 @@ export default function Home() {
                   Effortless Integration
                 </h3>
                 <p className="mt-5 text-muted-foreground text-lg">
-                  Share a link or embed the assistant in your LMS or site—no complex setup required.
+                  Share a link or embed the assistant in your LMS or site — no complex setup required.
                 </p>
               </div>
             </div>
@@ -246,7 +246,7 @@ export default function Home() {
                 Add It To Your Site
               </h3>
               <p className="mt-4 text-muted-foreground">
-                Copy a link or embed in your LMS or website—no coding required.
+                Copy a link or embed in your LMS or website, no coding required.
               </p>
             </div>
           </div>

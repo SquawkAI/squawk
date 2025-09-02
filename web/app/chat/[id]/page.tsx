@@ -7,6 +7,7 @@ import { v4 as uuid } from "uuid";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Send, Loader2 } from "lucide-react";
 import { Plus, PaperPlaneTilt } from "@phosphor-icons/react";
 
 import ReactMarkdown from "react-markdown";
@@ -72,12 +73,20 @@ interface MessageProps {
     content: string;
 }
 
+
+const ThinkingLine: React.FC = () => (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Thinking…</span>
+    </div>
+);
+
 const Message: React.FC<MessageProps> = ({ role, content }) => {
     const isUser = role === "user";
 
     return (
-        <div className={`flex items-start gap-3 ${isUser ? "justify-end" : ""}`}>
-            <div className={`rounded-2xl px-4 py-2 text-sm leading-relaxed max-w-[75%] ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+        <div className={`flex items-start  gap-3 ${isUser ? "justify-end" : ""}`}>
+            <div className={`rounded-2xl py-2 text-sm leading-relaxed max-w-[75%] ${content && "px-4"} ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                 {isUser ? (
                     <div className="whitespace-pre-wrap">{content}</div>
                 ) : (
@@ -86,7 +95,7 @@ const Message: React.FC<MessageProps> = ({ role, content }) => {
                             remarkPlugins={[remarkGfm, remarkBreaks]} // ← remove remarkBreaks to avoid odd line wrapping
                             components={{
                                 // Do NOT override <pre>; let SyntaxHighlighter own the block wrapper.
-                            code({ className, children, ...props }) {
+                                code({ className, children, ...props }) {
                                     const m = /language-([\w+-]+)/i.exec(className || "");
                                     const lang = normalizeLang(m?.[1] || "");
 
@@ -146,14 +155,14 @@ const Message: React.FC<MessageProps> = ({ role, content }) => {
 export default function ChatPage() {
     const { id: projectId } = useParams();
     const [sessionId, setSessionId] = useState(uuid());
-    
-    
+
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<{ role: "user" | "assistant", content: string }[]>([
         { role: "assistant", content: "Hi! Ask me anything about your course materials." },
     ]);
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isStreaming, setIsStreaming] = useState(false);
 
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const headerRef = useRef<HTMLElement>(null);
@@ -170,11 +179,12 @@ export default function ChatPage() {
 
     const sendMessage = async () => {
         const text = input.trim();
-        if (!text || isLoading) return;
+        if (!text || isLoading || isStreaming) return;
 
         setMessages((prev) => [...prev, { role: "user", content: text }]);
         setInput("");
         setIsLoading(true);
+        setIsStreaming(true);
 
         const assistantIndex = messages.length + 1;
         setMessages((prev) => [...prev, { role: "assistant", content: "", streaming: true }]);
@@ -192,6 +202,8 @@ export default function ChatPage() {
             const decoder = new TextDecoder();
 
             while (true) {
+                setIsLoading(false);
+
                 const { value, done } = await reader.read();
                 if (done) break;
                 const chunk = decoder.decode(value, { stream: true });
@@ -218,6 +230,7 @@ export default function ChatPage() {
                 return copy;
             });
             setIsLoading(false);
+            setIsStreaming(false);
         }
     };
 
@@ -229,7 +242,7 @@ export default function ChatPage() {
                 className="fixed top-0 left-0 right-0 z-30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
             >
                 <div className="flex items-center justify-between max-w-5xl px-6 py-3 mx-auto">
-                    <Image src="/squawk-logo-large.png" alt="SquawkAI Logo" width={120} height={40} priority />
+                    <Image src="/squawk-logo-text.svg" alt="SquawkAI Logo" width={120} height={40} priority />
                 </div>
             </header>
 
@@ -244,6 +257,7 @@ export default function ChatPage() {
                         <Message key={idx} role={m.role} content={m.content} />
                     ))}
 
+                    {isLoading && <ThinkingLine />}
                 </div>
             </div>
 
