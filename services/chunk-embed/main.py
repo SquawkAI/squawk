@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pathlib import Path
 from dotenv import load_dotenv
 import asyncio
 
@@ -102,10 +103,16 @@ async def embed_file(request: Request, file_id: str = Form(...), file: UploadFil
         raise HTTPException(
             status_code=400, detail=f"Unsupported file type: {ext}")
 
-    temp_path = os.path.join(tempfile.gettempdir(),
-                             f"{uuid.uuid4()}_{file.filename}")
-    with open(temp_path, "wb") as f:
-        f.write(await file.read())
+    if (not check_file_id(file_id)):
+        raise HTTPException(status_code=400, detail="file_id not found")
+
+    temp_path = Path(tempfile.gettempdir()) / f"{uuid.uuid4()}_{file.filename}"
+    try:
+        contents = await file.read()
+        temp_path.write_bytes(contents)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Could not persist upload: {e}")
 
     try:
         loader_cls = SUPPORTED_TYPES[ext]
@@ -121,20 +128,19 @@ async def embed_file(request: Request, file_id: str = Form(...), file: UploadFil
         )
         chunks = splitter.split_documents(documents)
 
-        if (not check_file_id(file_id)):
-            raise HTTPException(status_code=400, detail="file_id not found")
-
         save_chunks_and_embeddings(file_id, chunks)
 
-        os.remove(temp_path)
+        supabase.table("files").update(
+            {"status": "completed"}).eq("id", file_id).execute()
+
     except Exception as e:
         supabase.table("files").update(
             {"status": "failed"}).eq("id", file_id).execute()
 
-        os.remove(temp_path)
-
         raise HTTPException(
             status_code=500, detail=f"Error processing file: {str(e)}")
+    finally:
+        os.remove(temp_path)
 
     return {
         "message": f"Embedded {file.filename} successfully",
@@ -193,7 +199,3 @@ def save_chunks_and_embeddings(file_id, chunks):
                 for i, vec in enumerate(vectors)]
     for batch in _batched(emb_rows, DB_BATCH):
         supabase.table("embeddings").insert(batch).execute()
-
-    # 4) Mark file complete
-    supabase.table("files").update(
-        {"status": "completed"}).eq("id", file_id).execute()

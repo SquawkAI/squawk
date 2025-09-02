@@ -109,10 +109,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
-    }).catch(async (err) => {
-      console.error("Embedding request failed:", err);
-      await supabase.from("files").update({ status: "error" }).eq("id", data.id);
-    });
+    })
 
     uploadedPaths.push({
       id: data.id,
