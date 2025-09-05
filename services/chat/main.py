@@ -11,11 +11,11 @@ from sentry_sdk.crons import monitor
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from supabase import Client, create_client
+
 from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
 
 from retrievers.SupabaseRetriever import build_supabase_retriever
-from chains.contextual_history_with_memory import build_contextual_rag_with_history
+from chains.contextual_history_with_memory import build_virtual_ta_agent
 from utils.SessionStore import SessionStore
 
 load_dotenv()
@@ -35,16 +35,12 @@ if APP_ENV == "production":
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        # Add data like request headers and IP for users,
-        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
         send_default_pii=True,
     )
 
     @app.on_event("startup")
     async def start_heartbeat():
-        # store task so we can cancel on shutdown
         async def _beat():
-            # send one check-in immediately at boot
             with monitor(monitor_slug=MONITOR_SLUG):
                 pass
             while True:
@@ -53,10 +49,8 @@ if APP_ENV == "production":
                     with monitor(monitor_slug=MONITOR_SLUG):
                         pass
                 except asyncio.CancelledError:
-                    # allow clean shutdown
                     break
                 except Exception as e:
-                    # report any unexpected heartbeat failure but keep looping
                     sentry_sdk.capture_exception(e)
 
         app.state.sentry_heartbeat_task = asyncio.create_task(_beat())
@@ -71,7 +65,11 @@ if APP_ENV == "production":
             except Exception:
                 pass
 
+# Optional; not required by the agent builder below
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+# IMPORTANT: SessionStore must be LangChain-compatible (has .get(session_id) -> history with
+# .messages (BaseMessage[]), .add_user_message(), .add_ai_message()).
 session_store = SessionStore(max_messages=50)
 
 TONE_RULES = {
@@ -79,19 +77,16 @@ TONE_RULES = {
     "neutral": "Use clear, plain language. Stay objective and free of emotional or casual phrasing.",
     "informal": "Use relaxed, conversational language with light warmth. Contractions are fine; keep it approachable.",
 }
-
 COMPLEXITY_RULES = {
     "introductory": "Assume no prior knowledge. Avoid jargon; define terms briefly and use simple examples.",
     "intermediate": "Provide moderate technical detail. Use some domain terms and brief explanations.",
     "advanced": "Assume subject familiarity. Use precise domain terminology and rigorous explanations.",
 }
-
 DETAIL_RULES = {
     "direct": "Answer concisely with only essential facts. Minimize explanation and qualifiers.",
     "default": "Provide a balanced answer with brief supporting context and rationale.",
     "explanatory": "Provide thorough explanation with reasoning, context, background, and—when helpful—short examples.",
 }
-
 AUTHORITY_RULES = {
     "supportive": "Adopt an encouraging, coaching tone. Affirm progress and offer gentle guidance and next steps.",
     "authoritative": "Adopt a confident, directive tone. State conclusions decisively and minimize hedging.",
@@ -106,19 +101,17 @@ class Conversation(BaseModel):
 
 
 def _sse_event_from_text(text: str) -> str:
-    """Encode text as one SSE event, preserving newlines per spec."""
     lines = text.split("\n")
     out = []
     for ln in lines:
-        # empty line -> contributes '\n' when client joins
         out.append(f"data: {ln}\n")
-    out.append("\n")  # end of event
+    out.append("\n")
     return "".join(out)
 
 
 @app.get("/sentry-debug")
 async def trigger_error():
-    division_by_zero = 1 / 0
+    _ = 1 / 0
 
 
 @app.get("/status")
@@ -139,15 +132,17 @@ async def conversation(request: Request, conversation_request: Conversation):
 
     project = (
         supabase.table("project")
-        .select("id, tone", "complexity", "authority", "detail")
+        .select("id, tone, complexity, authority, detail")
         .eq("id", str(project_id))
         .execute()
     )
+    if not project.data:
+        raise HTTPException(status_code=404, detail="project not found")
 
-    tone = project.data[0]["tone"]
-    complexity = project.data[0]["complexity"]
-    authority = project.data[0]["authority"]
-    detail = project.data[0]["detail"]
+    tone = project.data[0].get("tone")
+    complexity = project.data[0].get("complexity")
+    authority = project.data[0].get("authority")
+    detail = project.data[0].get("detail")
 
     if tone not in TONE_RULES:
         tone = "neutral"
@@ -167,22 +162,28 @@ async def conversation(request: Request, conversation_request: Conversation):
     ])
 
     supabase_retriever = build_supabase_retriever(supabase, project_id)
-    chain = build_contextual_rag_with_history(
-        supabase_retriever, llm, session_store, sys_prompt)
-    config = {"configurable": {"session_id": conversation_id}}
 
-    # IMPORTANT: project the chain output to ONLY the final answer,
-    # so we don't stream 'standalone' rewrite or 'docs' events.
-    answer_only = chain.pick("answer") | StrOutputParser()
+    agent_run = build_virtual_ta_agent(
+        retriever=supabase_retriever,
+        session_store=session_store,
+        model="gpt-4o-mini",
+        temperature=0.3,
+        k_default=4,
+        snippet_char_limit=1200,
+        sys_style=sys_prompt,
+    )
 
     async def sse_generator():
         try:
-            async for token in answer_only.astream({"question": query}, config=config):
-                # token is a plain string chunk from the final answer only
-                if token:
-                    yield _sse_event_from_text(token)
-                    await asyncio.sleep(0)
-            # completion marker (optional)
+            # Run the agent in a worker thread so we don't block the event loop
+            loop = asyncio.get_event_loop()
+            answer = await loop.run_in_executor(None, agent_run, query, conversation_id)
+
+            # Stream the final answer in friendly chunks (paragraphs)
+            for para in [p for p in answer.split("\n\n") if p.strip()]:
+                yield _sse_event_from_text(para)
+                await asyncio.sleep(0)
+
             yield "data: [done]\n\n"
         except asyncio.CancelledError:
             return
