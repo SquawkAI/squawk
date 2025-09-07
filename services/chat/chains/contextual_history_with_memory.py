@@ -77,7 +77,6 @@ def build_virtual_ta_agent(
         logger.info(">>> retrieve_course_materials_impl CALLED")
         logger.info(f"[Retriever Query] {query}")
 
-
         docs = retriever.get_relevant_documents(query)[:k]
         snippets: List[Dict[str, Any]] = []
         for d in docs:
@@ -96,8 +95,7 @@ def build_virtual_ta_agent(
     retrieve_tool = StructuredTool.from_function(
         func=retrieve_course_materials_impl,
         name="retrieve_course_materials",
-        description=("Fetch short, relevant snippets from professor-uploaded materials "
-                     "when course-specific facts are needed (syllabus, due dates, policies, lecture content, definitions unique to this class)."),
+        description=("Fetch short, relevant snippets (syllabus, due dates, policies, lecture content, definitions unique to this class) from professor-uploaded materials "),
         args_schema=RetrieveArgs,
         return_direct=False,
     )
@@ -124,11 +122,40 @@ def build_virtual_ta_agent(
         handle_parsing_errors=True,
     )
 
+    async def stream(question: str, session_id: str):
+        history = session_store.get(session_id)
+
+        hinted = question + \
+            "\n\n(If course-specific or unsure, call `retrieve_course_materials` before answering.)"
+
+        # Buffer to save the final assistant message to history later
+        buf = []
+
+        async for event in executor.astream_events(
+            {"input": hinted, "history": history.messages},
+            version="v1"
+        ):
+            et = event["event"]
+
+            # Stream only LLM token chunks to the client
+            if et == "on_chat_model_stream":
+                chunk = event["data"]["chunk"]
+                text = chunk.content
+                if text:
+                    buf.append(text)
+                    yield text
+
+        # Persist conversation after the full output is known
+        final_text = "".join(buf)
+        history.add_user_message(question)
+        history.add_ai_message(final_text)
+
     def run(question: str, session_id: str) -> str:
         history = session_store.get(session_id)
 
         # Optional: tiny hint that increases tool usage without forcing
-        hinted = question + "\n\n(If course-specific or unsure, call `retrieve_course_materials` before answering.)"
+        hinted = question + \
+            "\n\n(If course-specific or unsure, call `retrieve_course_materials` before answering.)"
 
         result = executor.invoke(
             {"input": hinted, "history": history.messages})
@@ -138,4 +165,4 @@ def build_virtual_ta_agent(
         history.add_ai_message(text)
         return text
 
-    return run
+    return run, stream

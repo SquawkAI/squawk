@@ -163,7 +163,7 @@ async def conversation(request: Request, conversation_request: Conversation):
 
     supabase_retriever = build_supabase_retriever(supabase, project_id)
 
-    agent_run = build_virtual_ta_agent(
+    agent_run, agent_stream = build_virtual_ta_agent(
         retriever=supabase_retriever,
         session_store=session_store,
         model="gpt-4o-mini",
@@ -175,13 +175,10 @@ async def conversation(request: Request, conversation_request: Conversation):
 
     async def sse_generator():
         try:
-            # Run the agent in a worker thread so we don't block the event loop
-            loop = asyncio.get_event_loop()
-            answer = await loop.run_in_executor(None, agent_run, query, conversation_id)
-
-            # Stream the final answer in friendly chunks (paragraphs)
-            for para in [p for p in answer.split("\n\n") if p.strip()]:
-                yield _sse_event_from_text(para)
+            # Stream token chunks as SSE lines
+            async for chunk in agent_stream(query, conversation_id):
+                # You can batch or throttle if you want; simplest is line-per-chunk:
+                yield _sse_event_from_text(chunk)
                 await asyncio.sleep(0)
 
             yield "data: [done]\n\n"
