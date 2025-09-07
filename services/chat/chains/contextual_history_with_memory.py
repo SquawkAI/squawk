@@ -1,55 +1,20 @@
+import json
+from typing import Any, Dict, List
+from pydantic import BaseModel, Field
+
+from langchain.tools import StructuredTool
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import RunnableParallel, RunnableLambda
-from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_core.output_parsers import StrOutputParser
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain.tools.render import render_text_description
 
-from utils.langchainUtils import format_docs
+import logging
+logger = logging.getLogger("virtual_ta")
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
 
-
-def last_n_messages(n: int = 12):
-    # 12 messages ≈ last 6 turns
-    return RunnableLambda(lambda x: {"history": x["history"][-n:], "question": x["question"]})
-
-
-def log_and_pass(x):
-    print("Rewritten question:", x)
-    return x
-
-
-def build_contextual_rag_with_history(retriever, llm, session_store, prompt):
-    """
-    Conversational RAG:
-      1) Contextualize (history, question) -> standalone question
-      2) Retrieve with standalone
-      3) Answer with {history} + {context}
-      4) Memory via RunnableWithMessageHistory (session_store.get)
-    """
-
-    # 1) Contextualizer: rewrite into a standalone question
-    contextualize_q = (
-        ChatPromptTemplate.from_messages([
-            ("system",
-             "Rewrite the latest user question into a fully self-contained query for retrieval.\n"
-             "- Resolve pronouns like 'he/she/they/this/that' using ONLY the conversation history from THIS session.\n"
-             "- If a specific person, entity, project, or topic has been referenced earlier in this session, include it explicitly.\n"
-             "- If there is no clear antecedent in this session, keep the query generic (do NOT guess).\n"
-             "- Return ONLY the rewritten question."),
-            ("placeholder", "{history}"),
-            ("human", "{question}"),
-        ])
-        | llm
-        | StrOutputParser()
-    )
-
-    standalone = last_n_messages(12) | contextualize_q
-    docs = ({"standalone": standalone}
-            | RunnableLambda(lambda x: x["standalone"])
-            | retriever)
-
-    # 3) Answer prompt sees history + retrieved context + the rewritten question
-    answer_prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         f"""You are an educational assistant designed for a study chatbot that uses course material uploaded by professors as context. Students use this chatbot to deepen their understanding of academic topics by engaging with that material.
+SYSTEM = """
+You are an educational assistant designed for a study chatbot that uses course material uploaded by professors as context. Students use this chatbot to deepen their understanding of academic topics by engaging with that material.
 
 Engage warmly yet honestly with the user. Be direct; avoid ungrounded or sycophantic flattery. Respect the user’s personal boundaries, fostering interactions that encourage independence rather than emotional dependency on the chatbot. Maintain professionalism and grounded honesty that best represents OpenAI and its values.
 
@@ -82,39 +47,122 @@ YOU CAN:
     • Ask questions to reinforce understanding.
     • Explain and correct mistakes with patience and kindness.
 
-{prompt}
-
 Contextual grounding: Prioritize the professor-uploaded course materials to answer questions. If you can't find anything relevant in the material, be honest and encourage the user to try rephrasing or asking a follow-up based on class content.
 
 You are here to help the user learn, not just to respond.
-"""),
-        MessagesPlaceholder(variable_name="history"),
-        ("human",
-         "Student Question:\n{standalone}\n\nCourse/Context Materials:\n{context}\n\nFollow the TA guidelines above.")
-    ])
 
-    # select only the injected history from wrapper input
-    select_history = RunnableLambda(lambda x: x["history"][-12:])
-    answer = (
-        {
-            "context": docs | format_docs,
-            "standalone": standalone,
-            "history": select_history,
-        }
-        | answer_prompt
-        | llm
-        | StrOutputParser()
+Tool contract (internal):
+- The tool returns a JSON object with a key 'snippets' (list of objects with keys: text, title, page (optional), id (optional)).
+- Use it to pull accurate course-specific facts, then answer normally. Only include (Title, p. X) if the student asks for sources.
+"""
+
+
+def build_virtual_ta_agent(
+    retriever,
+    session_store,
+    *,
+    model: str = "gpt-4o-mini",
+    temperature: float = 0.3,
+    k_default: int = 4,
+    snippet_char_limit: int = 1200,
+    sys_style: str = "",
+):
+    class RetrieveArgs(BaseModel):
+        query: str = Field(...,
+                           description="Student's question or focused lookup")
+        k: int = Field(
+            k_default, description="How many snippets to fetch (top-k)")
+
+    def retrieve_course_materials_impl(query: str, k: int = k_default) -> str:
+        logger.info(">>> retrieve_course_materials_impl CALLED")
+        logger.info(f"[Retriever Query] {query}")
+
+        docs = retriever.get_relevant_documents(query)[:k]
+        snippets: List[Dict[str, Any]] = []
+        for d in docs:
+            meta = getattr(d, "metadata", {}) or {}
+            text = (getattr(d, "page_content", "") or "")[:snippet_char_limit]
+            snippet = {
+                "text": text,
+                "title": meta.get("title") or meta.get("source") or "Course material",
+                "page": meta.get("page"),
+                "id": meta.get("doc_id") or meta.get("source"),
+            }
+            snippets.append(snippet)
+            print(f"[Retrieved Snippet] {json.dumps(snippet, indent=2)}")
+        return json.dumps({"snippets": snippets})
+
+    retrieve_tool = StructuredTool.from_function(
+        func=retrieve_course_materials_impl,
+        name="retrieve_course_materials",
+        description=("Fetch short, relevant snippets (syllabus, due dates, policies, lecture content, definitions unique to this class) from professor-uploaded materials "),
+        args_schema=RetrieveArgs,
+        return_direct=False,
     )
 
-    # Return both docs and answer (and keep standalone for optional debugging)
-    base_chain = RunnableParallel(
-        docs=docs, answer=answer, standalone=standalone)
+    # Prompt
+    system_block = (sys_style.strip() +
+                    "\n\n" if sys_style else "") + SYSTEM.strip()
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_block +
+         "\n\nYou can use these tools if needed:\n{tools}"),
+        MessagesPlaceholder("history"),
+        ("human", "{input}"),
+        MessagesPlaceholder("agent_scratchpad"),
+    ]).partial(tools=render_text_description([retrieve_tool]))
 
-    return RunnableWithMessageHistory(
-        base_chain,
-        # expects (session_id: str) -> ChatMessageHistory
-        session_store.get,
-        input_messages_key="question",
-        history_messages_key="history",
-        output_messages_key="answer",
+    llm = ChatOpenAI(model=model, temperature=temperature)
+
+    agent = create_tool_calling_agent(llm, [retrieve_tool], prompt)
+    executor = AgentExecutor(
+        agent=agent,
+        tools=[retrieve_tool],
+        verbose=False,
+        max_iterations=3,
+        handle_parsing_errors=True,
     )
+
+    async def stream(question: str, session_id: str):
+        history = session_store.get(session_id)
+
+        hinted = question + \
+            "\n\n(If course-specific or unsure, call `retrieve_course_materials` before answering.)"
+
+        # Buffer to save the final assistant message to history later
+        buf = []
+
+        async for event in executor.astream_events(
+            {"input": hinted, "history": history.messages},
+            version="v1"
+        ):
+            et = event["event"]
+
+            # Stream only LLM token chunks to the client
+            if et == "on_chat_model_stream":
+                chunk = event["data"]["chunk"]
+                text = chunk.content
+                if text:
+                    buf.append(text)
+                    yield text
+
+        # Persist conversation after the full output is known
+        final_text = "".join(buf)
+        history.add_user_message(question)
+        history.add_ai_message(final_text)
+
+    def run(question: str, session_id: str) -> str:
+        history = session_store.get(session_id)
+
+        # Optional: tiny hint that increases tool usage without forcing
+        hinted = question + \
+            "\n\n(If course-specific or unsure, call `retrieve_course_materials` before answering.)"
+
+        result = executor.invoke(
+            {"input": hinted, "history": history.messages})
+        text = result.get("output", "")
+
+        history.add_user_message(question)
+        history.add_ai_message(text)
+        return text
+
+    return run, stream
