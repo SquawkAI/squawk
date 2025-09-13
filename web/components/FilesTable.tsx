@@ -262,12 +262,12 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
       )}
 
       <div className="bg-background border border-border rounded-lg overflow-hidden">
-        <table className="w-full divide-y divide-border">
+        <table className="w-full divide-y divide-border table-fixed">
           <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-medium text-foreground">Name</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-foreground">Size</th>
-              <th className="px-4 py-2" />
+              <th className="px-4 py-2 text-left text-sm font-medium text-foreground w-4/5">Name</th>
+              <th className="px-4 py-2 text-left text-sm font-medium text-foreground w-1/5">Size</th>
+              <th className="px-4 py-2 w-1/10" />
             </tr>
           </thead>
 
@@ -282,7 +282,7 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
 
                 <td className="px-4 py-3 flex items-center gap-2">
                   <FileText size={20} className="text-muted-foreground" />
-                  <span>{file.name}</span>
+                  <span className="truncate">{file.name}</span>
 
                   {file.status === "processing" && (
                     <span className="ml-2 flex items-center gap-1 text-xs text-primary font-medium">
@@ -331,9 +331,9 @@ export const FilesTable: React.FC<FilesTableProps> = ({ refreshTrigger, projectI
                   )}
                 </td>
                 <td className="px-4 py-3 text-sm text-muted-foreground">
-                  {formatFileSize(file.size)}
+                  <span className="whitespace-nowrap">{formatFileSize(file.size)}</span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 min-w-[6rem]">
                   <div className="flex justify-end items-center gap-x-3">
                     {file.status === 'failed' && deletingFile !== file.id && (
                       <button
