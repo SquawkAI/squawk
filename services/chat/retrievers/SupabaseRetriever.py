@@ -190,9 +190,6 @@ class SupabaseRetriever(BaseRetriever):
         if not self.embeddings or not self.documents:
             return []
 
-        import re
-        import numpy as np
-
         # === Optional knobs (set on the instance; all are optional) ===
         # self.lexical_prefilter: bool | None
         # self.per_file_cap: int | None                # max docs per file in final selection
