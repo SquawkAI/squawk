@@ -5,9 +5,6 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 import asyncio
 
-import sentry_sdk
-from sentry_sdk.crons import monitor
-
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from supabase import Client, create_client
@@ -26,44 +23,6 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 app = FastAPI()
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# Enable sentry monitoring in production
-if APP_ENV == "production":
-    SENTRY_DSN = os.getenv("SENTRY_DSN")
-    MONITOR_SLUG = os.getenv("SENTRY_MONITOR_SLUG")
-    HEARTBEAT_SEC = int(os.getenv("SENTRY_MONITOR_INTERVAL_SEC", "3600"))
-
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        send_default_pii=True,
-    )
-
-    @app.on_event("startup")
-    async def start_heartbeat():
-        async def _beat():
-            with monitor(monitor_slug=MONITOR_SLUG):
-                pass
-            while True:
-                try:
-                    await asyncio.sleep(HEARTBEAT_SEC)
-                    with monitor(monitor_slug=MONITOR_SLUG):
-                        pass
-                except asyncio.CancelledError:
-                    break
-                except Exception as e:
-                    sentry_sdk.capture_exception(e)
-
-        app.state.sentry_heartbeat_task = asyncio.create_task(_beat())
-
-    @app.on_event("shutdown")
-    async def stop_heartbeat():
-        task = getattr(app.state, "sentry_heartbeat_task", None)
-        if task and not task.done():
-            task.cancel()
-            try:
-                await task
-            except Exception:
-                pass
 
 # Optional; not required by the agent builder below
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
@@ -107,11 +66,6 @@ def _sse_event_from_text(text: str) -> str:
         out.append(f"data: {ln}\n")
     out.append("\n")
     return "".join(out)
-
-
-@app.get("/sentry-debug")
-async def trigger_error():
-    _ = 1 / 0
 
 
 @app.get("/status")
@@ -168,7 +122,7 @@ async def conversation(request: Request, conversation_request: Conversation):
         session_store=session_store,
         model="gpt-4o-mini",
         temperature=0.3,
-        k_default=4,
+        k_default=20,
         snippet_char_limit=1200,
         sys_style=sys_prompt,
     )
