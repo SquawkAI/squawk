@@ -122,7 +122,7 @@ async def conversation(request: Request, conversation_request: Conversation):
         session_store=session_store,
         model="gpt-4o-mini",
         temperature=0.3,
-        k_default=4,
+        k_default=20,
         snippet_char_limit=1200,
         sys_style=sys_prompt,
     )
