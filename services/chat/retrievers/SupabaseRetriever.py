@@ -182,77 +182,120 @@ class SupabaseRetriever(BaseRetriever):
 
     # ----- Retrieval -----
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
-    ) -> List[Document]:
-        if not self.embeddings:
+    self,
+    query: str,
+    *,
+    run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+) -> List[Document]:
+        if not self.embeddings or not self.documents:
             return []
 
-        # 1) Embed & score all
-        q = np.array(self.embeddings_model.embed_query(query), dtype=float)
-        M = np.array(self.embeddings, dtype=float)
-        denom = (np.linalg.norm(M, axis=1) * np.linalg.norm(q))
+        # === Optional knobs (set on the instance; all are optional) ===
+        # self.lexical_prefilter: bool | None
+        # self.per_file_cap: int | None                # max docs per file in final selection
+        # self.diversity_first_frac: float | None      # e.g., 0.5 => enforce diversity for first 50% of k
+        # self.min_sim_quantile: float | None          # e.g., 0.90 => require top ≥ q-th quantile
+        # self.min_sim_delta: float | None             # optional +delta above that quantile
+
+        lexical_prefilter = getattr(self, "lexical_prefilter", True)
+        per_file_cap = getattr(self, "per_file_cap", None)
+        diversity_first_frac = getattr(self, "diversity_first_frac", None)
+        min_sim_quantile = getattr(self, "min_sim_quantile", None)
+        min_sim_delta = getattr(self, "min_sim_delta", 0.0)
+
+        # ---------- helpers (query-driven, no hardcoded terms) ----------
+        def _query_terms(q: str) -> list[str]:
+            q = q or ""
+            terms = []
+            # quoted phrases and backticked code
+            terms += re.findall(r'"([^"]{2,})"', q)
+            terms += re.findall(r"`([^`]{1,})`", q)
+            ql = q.lower()
+            # dotted identifiers (e.g., module.func), snake/camel-ish tokens, braces/specs typed by user
+            terms += re.findall(r"\b[a-z0-9_]+(?:\.[a-z0-9_]+)+\b", ql)
+            terms += re.findall(r"\b[a-zA-Z][a-zA-Z0-9_]{2,}\b", q)  # identifiers length ≥3
+            # raw non-stopword-ish tokens from query (length ≥3)
+            terms += [t for t in re.split(r"[^a-zA-Z0-9_{}/:.]+", ql) if len(t) >= 3]
+            # dedupe/normalize
+            seen, out = set(), []
+            for t in terms:
+                t = t.strip().lower()
+                if t and t not in seen:
+                    seen.add(t)
+                    out.append(t)
+            return out
+
+        def _text_has_any(text: str, terms: list[str]) -> bool:
+            tl = (text or "").lower()
+            return any(t in tl for t in terms)
+
+        # ---------- candidate set (optional lexical prefilter) ----------
+        candidate_idxs = list(range(len(self.documents)))
+        if lexical_prefilter:
+            must_terms = _query_terms(query)
+            if must_terms:
+                filtered = [i for i, d in enumerate(self.documents) if _text_has_any(d.page_content, must_terms)]
+                if filtered:
+                    candidate_idxs = filtered
+
+        if not candidate_idxs:
+            return []
+
+        # ---------- dense scoring on candidates ----------
+        q_vec = np.array(self.embeddings_model.embed_query(query), dtype=float)
+        M = np.array([self.embeddings[i] for i in candidate_idxs], dtype=float)
+        qn = np.linalg.norm(q_vec)
+        if qn == 0 or M.size == 0:
+            return []
+
+        denom = (np.linalg.norm(M, axis=1) * qn)
         denom[denom == 0] = 1e-12
-        sims = (M @ q) / denom
+        sims = (M @ q_vec) / denom
 
-        take = max(self.k * self.oversample, self.k + 6)
-        global_top = np.argsort(sims)[-take:][::-1]
+        # ---------- optional “abstain” (no fixed threshold; quantile-based if provided) ----------
+        if min_sim_quantile is not None:
+            qth = float(np.quantile(sims, min_sim_quantile)) if sims.size else 0.0
+            top = float(np.max(sims, initial=0.0))
+            if top < (qth + (min_sim_delta or 0.0)):
+                return []
 
-        # 2) Extract generic focus terms (quoted phrases, capitalized multi-words)
-        focus_terms = _extract_focus_terms(query)
+        # ---------- diverse selection across files (no fixed fractions unless provided) ----------
+        take = max(self.k * self.oversample, self.k + 10)
+        order = np.argsort(sims)[-take:][::-1]  # best → worst among candidates
+        pool = [(float(sims[j]), candidate_idxs[j]) for j in order]
 
-        # 3) Pick target group
-        key = self.grouping_key
-        # score per group = max similarity among top hits
-        group_best_score: dict[str, float] = {}
-        group_focus_bonus: dict[str, int] = {}
+        picked: list[int] = []
+        used_groups: dict = {}
+        group_key = self.grouping_key
 
-        for idx in global_top:
-            d = self.documents[idx]
-            gid = d.metadata.get(key)
-            sc = float(sims[idx])
-            group_best_score[gid] = max(group_best_score.get(gid, -1e9), sc)
-            if self.prefer_focus_terms and focus_terms:
-                # simple bonus: +1 for each focus term matched in this chunk
-                bonus = sum(1 for t in focus_terms if _contains_all(d.page_content, t))
-                group_focus_bonus[gid] = max(group_focus_bonus.get(gid, 0), bonus)
+        # Phase 1: enforce diversity for the first X% of k if configured
+        first_target = int(self.k * diversity_first_frac) if diversity_first_frac else 0
+        for sc, idx in pool:
+            gid = self.documents[idx].metadata.get(group_key)
+            if first_target and len(picked) < first_target:
+                # pick if new group or under per-file cap
+                if per_file_cap is None or used_groups.get(gid, 0) < per_file_cap:
+                    if used_groups.get(gid, 0) == 0:  # prefer new groups in this phase
+                        picked.append(idx)
+                        used_groups[gid] = used_groups.get(gid, 0) + 1
+            if len(picked) >= first_target:
+                break
 
-        if not group_best_score:
-            return []
+        # Phase 2: fill remaining purely by score, respecting per-file cap if set
+        for sc, idx in pool:
+            if len(picked) >= self.k:
+                break
+            if idx in picked:
+                continue
+            gid = self.documents[idx].metadata.get(group_key)
+            if per_file_cap is not None and used_groups.get(gid, 0) >= per_file_cap:
+                continue
+            picked.append(idx)
+            used_groups[gid] = used_groups.get(gid, 0) + 1
 
-        def group_score(gid: str) -> float:
-            return group_best_score.get(gid, -1e9) + 0.05 * group_focus_bonus.get(gid, 0)
-
-        target_group = max(group_best_score.keys(), key=group_score)
-
-        # 4) Seeds = top hits from target group; expand neighbors (if chunk_index exists)
-        seeds = [i for i in global_top if self.documents[i].metadata.get(key) == target_group]
-
-        expanded = self._neighbor_expand(seeds, self.neighbor_window)
-        expanded = [i for i in expanded if self.documents[i].metadata.get(key) == target_group]
-
-        # Sort by similarity within the group
-        expanded_sorted = sorted(expanded, key=lambda i: sims[i], reverse=True)
-
-        chosen = expanded_sorted[: self.k]
-
-        # 5) If still short, add diverse extras from other groups (MMR-lite)
-        if len(chosen) < self.k:
-            used_groups = {self.documents[i].metadata.get(key) for i in chosen}
-            extras = []
-            for idx in global_top:
-                gid = self.documents[idx].metadata.get(key)
-                if gid in used_groups or idx in chosen:
-                    continue
-                extras.append(idx)
-                used_groups.add(gid)
-                if len(chosen) + len(extras) >= self.k:
-                    break
-            chosen += extras[: (self.k - len(chosen))]
-
+        chosen = picked[: self.k]
         return [self.documents[i] for i in chosen]
+
 
     async def _aget_relevant_documents(
         self,
