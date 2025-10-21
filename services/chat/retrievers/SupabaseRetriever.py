@@ -98,6 +98,12 @@ class SupabaseRetriever(BaseRetriever):
 
     # ----- Load -----
     def _load_data(self) -> None:
+        # Helper for batching
+        def chunked(iterable, n):
+            for i in range(0, len(iterable), n):
+                yield iterable[i:i + n]
+
+        # 1) Fetch files
         files_res = (
             self.supabase.table("files")
             .select("id,name")  # 'name' from your schema; harmless if null
@@ -111,6 +117,7 @@ class SupabaseRetriever(BaseRetriever):
         if not file_ids:
             return
 
+        # 2) Fetch chunks
         chunks_res = (
             self.supabase.table("chunks")
             .select("id, content, file_id, chunk_index")
@@ -122,15 +129,25 @@ class SupabaseRetriever(BaseRetriever):
             return
         chunk_ids = [c["id"] for c in chunks]
 
-        embeds_res = (
-            self.supabase.table("embeddings")
-            .select("chunk_id, embedding")
-            .in_("chunk_id", chunk_ids)
-            .execute()
-        )
-        embed_map = {row["chunk_id"]: _to_float_list(row["embedding"])
-                     for row in (embeds_res.data or [])}
+        # 3) Fetch embeddings in batches to avoid long URLs
+        rows = []
+        for batch in chunked(chunk_ids, 100):  # 100 is usually safe
+            res = (
+                self.supabase.table("embeddings")
+                .select("chunk_id, embedding")
+                .in_("chunk_id", batch)
+                .execute()
+            )
+            if getattr(res, "error", None):
+                raise RuntimeError(f"Error fetching embeddings: {res.error}")
+            rows.extend(res.data or [])
 
+        embed_map = {
+            row["chunk_id"]: _to_float_list(row["embedding"])
+            for row in rows
+        }
+
+        # 4) Combine chunks + embeddings into documents
         for row in chunks:
             vec = embed_map.get(row["id"])
             if not vec:
